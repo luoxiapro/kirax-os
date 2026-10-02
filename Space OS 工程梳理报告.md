@@ -304,3 +304,57 @@ Pi3 → 默认 AArch64 桌面；Pi2 → 自动降级 32 位；Pi3 想切 32 位�
 | `kernel/src/syscall.rs` | 串口输出改走统一 console::CONSOLE |
 | `scripts/make-sdimg.py` | 新增 `--kernel64` 双内核镜像 |
 | `Space OS 工程梳理报告.md` | 本表 |
+
+---
+
+## 九、全面检查记录（2026-10-02 收尾）
+
+### 9.1 编译零告警
+清理全部 lint 告警（三 target 均 **0 error / 0 warning**）：
+- `thumbv7a-none-eabi`（默认统一内核）与 `--features pi3`、`aarch64-unknown-none`
+  三个构建路径全零告警；
+- 主要清理项：unnecessary unsafe（pl011/mmu/sd）、冗余 mut、未用 import/变量、
+  `static_mut_refs`（scheduler/mmu 属设计内）、函数指针 cast（改裸指针转换绕 lint）、
+  sd.rs 寄存器常量池模块级 `#![allow(dead_code)]`（真机调试期规范命名）、
+  USB 描述符结构体 `#[allow(non_snake_case)]`（USB 规范字段名）；
+- **soc.rs `mrs {0:w}` 修复**：AArch64 读 MIDR_EL1 需 32 位寄存器格式（`{0:w}`），
+  否则按 64 位 x0 格式化（asm_sub_register 告警）。
+
+### 9.2 死代码清理
+- **uart.rs / pl011.rs 各自的 `pub static CONSOLE` 删除**：console.rs 统一 Console
+  上线后两份旧全局静态已无引用（grep 确认零引用后移除）；
+- **rr_check.rs 挂载修复**：此前从未被 lib.rs 引用（测试未运行）。现经
+  `include!` 挂入 `#[cfg(test)]`，并把纯打印改写为**断言式测试**：
+  顶边中点实心、矩形内部不填充、圆角弧内描边覆盖（SDF 语义：角像素中心
+  距弧心 < 半径即覆盖）、弧外/矩形外零像素。host 单测 **56 → 57 PASS**。
+
+### 9.3 环境恢复脚本化
+反复出现"环境重置后 qemu/arm-none-eabi/gdb/apt 源全丢"（本次检查开头再次发生）。
+新增 **`tools/setup-toolchain.sh`** 一键恢复：写回 apt 代理、切换清华源（失败
+自动换官方源说明）、安装 qemu/gdb/binutils-arm-none-eabi/gcc-arm-none-eabi，
+幂等可重复执行。**坑**：清华镜像对 binutils/gcc-arm-none-eabi 两个包返回
+403 Forbidden，需切官方源（archive.ubuntu.com）经代理安装。
+
+### 9.4 新增 Makefile 目标
+- **`make pi3-aarch64-qemu`**：QEMU raspi3b 一键验证 AArch64 内核（此前只能手敲
+  命令；QEMU_A64 变量已定义）。
+
+### 9.5 稳定性
+- QEMU 三路径（Pi2 自动检测 / 强制 PL011 / AArch64）各 **14/14 PASS**；
+- 5 轮重复稳定性测试全部 PASS（无 flaky）；
+- host 单测 57/57，`make test` 全绿；
+- 统一镜像 `space-os.img` 重建并 FAT16 逐项核验（KERNEL7=70088B、
+  KERNEL8=92291B、CONFIG=95B，镜像精确 256MiB）。
+
+### 9.6 文档同步
+- README 全面更新为统一镜像工作流（含 setup-toolchain.sh、单镜像烧录）；
+- 报告 §五构建命令同步为单镜像；
+- 删除陈旧交付物 `space-os-utm.tar.gz`（UTM 方案已弃用）。
+
+### 9.7 版本管理
+工程初始化 git（此前无版本控制）：`.gitignore` 覆盖 Rust target/构建产物/
+Android 构建缓存；首个提交已建立（157 个文件），满足"提交后一键测试"的工程规范。
+
+### 9.8 已知限制（未变）
+- EMMC/SD、USB、四核 AArch64 调度、DEX 解释器：真机验证项 / 路线图 TODO
+  （见 §7.4）；AArch64 从核启动未实现（core0 单核 wfe 空闲）。
