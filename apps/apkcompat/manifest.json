@@ -1,0 +1,10 @@
+{
+  "name": "apkcompat",
+  "title": "APK 兼容器",
+  "version": "0.1.0",
+  "icon": "orbit",
+  "width": 640,
+  "height": 480,
+  "subtitle": "Space OS 安卓兼容层（参考鸿蒙卓易通）",
+  "content": "在 Space OS 上识别、安装与管理 Android APK 文件，提供兼容层运行入口。\n\n功能：\n  1. 扫描 /APKS 目录中的 .apk 文件（ZIP 容器）\n  2. 解析 APK 的 AndroidManifest.xml（二进制 XML），提取包名与应用名\n  3. 提取应用图标（mipmap PNG）\n  4. 安装 / 卸载 / 启动 兼容层应用\n\n当前实现（Phase 5 配套）：\n  - APK 识别与元数据解析：完整可运行（ZIP 中心目录 + 二进制 XML）\n  - DEX 字节码执行引擎：路线图见 apps/apkcompat/README.md\n  - 兼容层运行态：Binder/ART 抽象接口已预留\n\n按键：\n  [扫描] 重新扫描 /APKS\n  [安装] 安装选中的 APK\n  [卸载] 卸载选中的应用\n  [启动] 以兼容模式启动\n  [设置] 兼容层设置（转译模式/分辨率）"
+}

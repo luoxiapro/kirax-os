@@ -1,0 +1,30 @@
+[package]
+name = "space-studio"
+version = "0.1.0"
+description = "Space OS 图形化 IDE：项目管理器、代码编辑器、可视化 UI 设计器、一键打包部署"
+edition = "2021"
+rust-version = "1.75"
+
+[lib]
+name = "space_studio_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-shell = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[features]
+# 默认启用自定义协议（Android 上需要）
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]
+
+[profile.release]
+strip = true
+lto = true
+codegen-units = 1
+panic = "abort"

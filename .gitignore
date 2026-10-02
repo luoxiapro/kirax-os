@@ -1,0 +1,33 @@
+# Rust 构建产物
+kernel/target/
+kernel/target-pi3/
+crates/*/target/
+apps/apkcompat/target/
+tools/*/target/
+space-studio/src-tauri/target/
+space-studio/node_modules/
+
+# 构建产物（镜像/内核二进制/ELF）
+build/
+*.img
+*.elf
+
+# 测试/截图过程产物
+_shots/
+
+# Android 构建
+space-studio/src-tauri/gen/android/app/build/
+space-studio/src-tauri/gen/android/.gradle/
+space-studio/src-tauri/gen/android/local.properties
+space-studio/src-tauri/gen/android/.idea/
+space-studio/src-tauri/gen/android/app/src/main/assets/
+
+# 打包产物
+*.tar.gz
+*.exe
+*.apk
+*.deb
+
+# 编辑器
+.vscode/
+*.swp

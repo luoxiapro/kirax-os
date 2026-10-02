@@ -1,0 +1,9 @@
+{
+  "name": "calculator",
+  "title": "Calculator",
+  "version": "0.1.0",
+  "icon": "orbit",
+  "width": 320,
+  "height": 440,
+  "keys": ["0-9", "+", "-", "*", "/", "=", "C"]
+}

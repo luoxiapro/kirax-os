@@ -1,0 +1,9 @@
+{
+  "name": "hello",
+  "title": "Hello",
+  "version": "0.1.0",
+  "icon": "planet",
+  "width": 320,
+  "height": 240,
+  "content": "Hello, Space OS!"
+}

@@ -1,0 +1,27 @@
+# Space OS 内核（静态库形式，由 Makefile 与 boot/start.o 最终链接）
+[package]
+name = "space-kernel"
+version = "0.1.0"
+edition = "2021"
+autobins = false
+
+[lib]
+name = "space_kernel"
+path = "src/main.rs"
+crate-type = ["staticlib"]
+
+[features]
+# 树莓派 3B 构建：启用 PL011 主串口，SOC 横幅切为 BCM2837。
+# 用法：cargo build --features pi3（Makefile 目标 `make pi3` 会自动携带）
+pi3 = []
+
+[dependencies]
+# 纯逻辑内核库（buddy/模糊/混合/FAT32/.kir/Glass 令牌）
+space-core = { path = "../crates/space-core" }
+
+[profile.release]
+panic = "abort"            # 裸机禁止栈展开
+opt-level = 3
+lto = true                 # 链接期优化，缩小镜像
+codegen-units = 1
+debug = true               # 保留调试信息（QEMU + GDB 断点调试必需）

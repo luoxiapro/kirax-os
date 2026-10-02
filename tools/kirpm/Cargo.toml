@@ -1,0 +1,9 @@
+[package]
+name = "kirpm"
+version = "0.1.0"
+edition = "2021"
+description = "Space OS .kir 包管理器：install/list/remove"
+
+[[bin]]
+name = "kirpm"
+path = "src/main.rs"

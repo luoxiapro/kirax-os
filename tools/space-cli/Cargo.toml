@@ -1,0 +1,9 @@
+[package]
+name = "space-cli"
+version = "0.1.0"
+edition = "2021"
+description = "Space OS 应用构建命令行工具：new/build/run/package/install"
+
+[[bin]]
+name = "space-cli"
+path = "src/main.rs"

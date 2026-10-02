@@ -1,0 +1,9 @@
+{
+  "name": "clock",
+  "title": "Clock",
+  "version": "0.1.0",
+  "icon": "rocket",
+  "width": 320,
+  "height": 200,
+  "update_hz": 1
+}

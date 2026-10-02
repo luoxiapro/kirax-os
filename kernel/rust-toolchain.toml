@@ -1,0 +1,4 @@
+# Space OS 内核工具链固定为 stable，目标为 thumbv7a-none-eabi
+[toolchain]
+channel = "stable"
+targets = ["thumbv7a-none-eabi"]

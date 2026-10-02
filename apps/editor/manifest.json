@@ -1,0 +1,9 @@
+{
+  "name": "editor",
+  "title": "Text Editor",
+  "version": "0.1.0",
+  "icon": "pen",
+  "width": 640,
+  "height": 480,
+  "file": "/home/user/notes.txt"
+}

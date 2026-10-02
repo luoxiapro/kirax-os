@@ -1,0 +1,17 @@
+# Space OS 纯逻辑内核库
+# 零第三方依赖（禁止任何外部库），no_std，可在主机上用 cargo test 做单元测试
+[package]
+name = "space-core"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+
+[profile.release]
+panic = "abort"      # 裸机环境不允许栈展开
+opt-level = 3
+lto = true
+codegen-units = 1
+
+[profile.test]
+opt-level = 0

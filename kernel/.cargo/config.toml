@@ -1,0 +1,9 @@
+# 强制使用 thumbv7a-none-eabi 裸机目标（Thumb-2，ARMv7-A）
+# cortex-a7 自带 +v7,+thumb2,+neon（VFPv4），无需显式 target-feature
+[build]
+target = "thumbv7a-none-eabi"
+
+[target.thumbv7a-none-eabi]
+rustflags = [
+    "-C", "target-cpu=cortex-a7",
+]

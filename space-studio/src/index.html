@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Space Studio</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-glass="balance">
+  <canvas id="wallpaper"></canvas>
+
+  <!-- ========== 顶部工具栏（Android Studio 风格） ========== -->
+  <header id="toolbar">
+    <div class="brand">
+      <svg class="icon planet" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="5" fill="none" stroke="currentColor" stroke-width="1.6"/>
+        <ellipse cx="12" cy="12" rx="10" ry="3.4" fill="none" stroke="currentColor" stroke-width="1" transform="rotate(-18 12 12)"/>
+        <circle cx="12" cy="12" r="1.6" fill="currentColor"/>
+      </svg>
+      <span class="brand-name">Space Studio</span>
+      <span class="brand-ver">v0.1.0</span>
+    </div>
+
+    <div class="toolbar-group">
+      <span id="tb-project-name" class="tb-project">无工程</span>
+      <span class="tb-sep"></span>
+      <div class="glass-mode" title="Glass 性能档位">
+        <button data-mode="ultra" class="mode-btn">极致</button>
+        <button data-mode="balance" class="mode-btn active">平衡</button>
+        <button data-mode="perf" class="mode-btn">性能</button>
+      </div>
+    </div>
+
+    <div class="toolbar-actions">
+      <button id="btn-pack" class="action-btn primary" title="打包为 .kir 应用">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M4 17v3h16v-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        打包
+      </button>
+      <button id="btn-run" class="action-btn" title="QEMU 运行内核">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4l12 8-12 8z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+        运行
+      </button>
+    </div>
+  </header>
+
+  <!-- ========== 主区 ========== -->
+  <main id="workspace">
+    <!-- 左：项目面板（文件树） -->
+    <aside id="sidebar" class="glass-panel">
+      <div class="side-tabs">
+        <span class="side-tab active">项目</span>
+        <span class="side-tab">结构</span>
+      </div>
+      <div class="side-actions">
+        <button id="btn-new-project" class="side-btn" title="新建工程">+</button>
+        <button id="btn-refresh" class="side-btn" title="刷新">⟳</button>
+      </div>
+      <ul id="file-tree" class="file-tree"></ul>
+      <div id="empty-hint" class="empty-hint hidden">选择或新建一个工程</div>
+    </aside>
+
+    <!-- 中：编辑器 -->
+    <section id="editor" class="glass-panel">
+      <div id="editor-tabs" class="editor-tabs"></div>
+      <div class="editor-wrap">
+        <div id="line-nums" class="line-nums"></div>
+        <textarea id="code-area" spellcheck="false" placeholder="选择或新建一个工程开始编写 Space OS 应用"></textarea>
+      </div>
+
+      <!-- 底部工具窗口：输出（可折叠） -->
+      <div id="tool-window" class="tool-window">
+        <div class="tool-header">
+          <span class="tool-title">输出</span>
+          <button id="btn-collapse" class="mini-btn" title="收起/展开">▽</button>
+        </div>
+        <pre id="log" class="log"></pre>
+      </div>
+    </section>
+  </main>
+
+  <!-- ========== 状态栏 ========== -->
+  <footer id="statusbar">
+    <span id="sb-cursor">Ln 1, Col 1</span>
+    <span class="sb-sep"></span>
+    <span>UTF-8</span>
+    <span class="sb-sep"></span>
+    <span>Space OS 0.1.0</span>
+    <span class="sb-right">
+      <span id="sb-glass">Glass: 平衡</span>
+      <span id="sb-mode" class="sb-mode">Tauri</span>
+    </span>
+  </footer>
+
+  <!-- 新建工程模态框 -->
+  <div id="modal" class="modal hidden">
+    <div class="modal-card glass-panel">
+      <div class="modal-title">新建工程</div>
+      <input id="modal-input" type="text" maxlength="64"
+             placeholder="工程名（字母/数字/_/-）" autocomplete="off" />
+      <div class="modal-actions">
+        <button id="modal-cancel" class="action-btn">取消</button>
+        <button id="modal-ok" class="action-btn primary">创建</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
