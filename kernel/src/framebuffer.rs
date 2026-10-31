@@ -87,7 +87,13 @@ pub fn init(w: u32, h: u32) -> Result<(), &'static str> {
     fb.back = vec![0u8; (pitch * h) as usize];
     fb.initialized = true;
 
-    klog!("[fb] framebuffer {w}x{h} bpp={DEFAULT_BPP} addr={:#010x} pitch={pitch}", addr);
+    // 把 framebuffer 物理段（1MB section 对齐）映射为设备内存：
+    // GPU 保留区 0x3C00_0000 起默认未映射，若不映射则写显存会触发 MMU fault。
+    // 设备属性（强序、写直达）可避免 CPU 写缓存与 GPU 扫描之间的 cache 一致性问题。
+    let base = (addr & !0xF_FFFF) as usize;
+    crate::mmu::map_section(base, base, crate::mmu::SECT_DEVICE);
+
+    klog!("[fb] framebuffer {w}x{h} bpp={DEFAULT_BPP} addr={:#010x} pitch={pitch} mapped={:#010x}", addr, base);
     Ok(())
 }
 

@@ -57,6 +57,12 @@ pub mod tag {
 
 /// 发送属性请求；`buf` 必须 16 字节对齐，包含 tag 序列并以 0 结束。
 /// 成功返回 buf 中第一个 tag 的响应；失败返回 None。
+///
+/// 轮询上限：某些模拟器（如 QEMU 6.x 的 raspi2b）不响应 framebuffer 等
+/// property tag，若无限等待会把内核卡死在 mailbox 轮询。加有限轮询后，
+/// 真机不受影响（响应在数微秒内），不支持的模拟器在超时后返回 Err，
+/// 由调用方回退到无显示路径。
+const MAILBOX_POLL_LIMIT: u32 = 4_000_000;
 pub fn property_request(buf: &mut [u32]) -> Result<(), &'static str> {
     unsafe {
         // 写请求码
@@ -66,20 +72,34 @@ pub fn property_request(buf: &mut [u32]) -> Result<(), &'static str> {
         buf[0] = total;
 
         // 发送
+        let mut spins = 0u32;
         let msg = (buf.as_mut_ptr() as u32 & !0xF) | CHANNEL_PROP;
         while core::ptr::read_volatile(MAILBOX_STATUS) & STATUS_FULL != 0 {
+            spins += 1;
+            if spins > MAILBOX_POLL_LIMIT {
+                return Err("mailbox 发送超时");
+            }
             core::hint::spin_loop();
         }
         core::ptr::write_volatile(MAILBOX_WRITE, msg);
 
         // 等待响应
+        spins = 0;
         loop {
             while core::ptr::read_volatile(MAILBOX_STATUS) & STATUS_EMPTY != 0 {
+                spins += 1;
+                if spins > MAILBOX_POLL_LIMIT {
+                    return Err("mailbox 无响应（模拟器可能不支持该 tag）");
+                }
                 core::hint::spin_loop();
             }
             let resp = core::ptr::read_volatile(MAILBOX_READ);
             if resp & 0xF == CHANNEL_PROP {
                 break;
+            }
+            spins += 1;
+            if spins > MAILBOX_POLL_LIMIT {
+                return Err("mailbox 响应通道异常");
             }
         }
 

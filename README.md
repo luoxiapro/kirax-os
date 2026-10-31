@@ -119,3 +119,19 @@ sudo dd if=build/space-os.img of=/dev/sdX bs=4M conv=fsync
 #   gpu_mem=16
 #   disable_overscan=1
 ```
+
+## 演示（QEMU 真实运行）
+
+以下为 `qemu-system-arm -M raspi2b -kernel build/qemu-kernel.elf` 真实启动的串口输出截图（`screenshots/`）：
+
+![启动横幅](screenshots/shot1-boot-banner.png)
+
+![内核核心初始化](screenshots/shot2-core-init.png)
+
+![板载自检 14/14](screenshots/shot3-selftest-14.png)
+
+![SMP 四核唤醒](screenshots/shot4-smp-4core.png)
+
+![完整启动总览](screenshots/shot5-full-boot.png)
+
+> 说明：图形桌面（玻璃桌面）已接入启动流程（`kernel/src/framebuffer.rs` 的 MMU 段映射 + `kernel/src/main.rs` 的桌面启动分支，mailbox 驱动带有限轮询超时）。QEMU 6.x 未实现树莓派 framebuffer 邮箱分配，内核在模拟器下会自动回退 headless 调度器；在真实 Pi2/Pi3 上可正常初始化 framebuffer 并显示桌面。

@@ -137,9 +137,19 @@ pub extern "C" fn kernel_main() -> ! {
     #[cfg(not(target_arch = "aarch64"))]
     klog!("[boot] secondary cores released");
 
-    // ---- 进入调度器空闲循环 ----
+    // ---- 图形桌面（Glass）：framebuffer 初始化 + 合成器 + 任务栏 + 通知 ----
     #[cfg(not(target_arch = "aarch64"))]
-    scheduler::start_scheduler();
+    {
+        if framebuffer::init(framebuffer::DEFAULT_W, framebuffer::DEFAULT_H).is_ok() {
+            klog!("[desktop] Glass desktop starting");
+            let mut desktop = desktop::Desktop::new();
+            desktop.notify("Space OS", "Glass desktop v0.1.0");
+            desktop.run(); // 主核进入桌面合成循环（不返回）
+        } else {
+            klog!("[desktop] framebuffer init failed, fallback to headless");
+            scheduler::start_scheduler();
+        }
+    }
     #[cfg(target_arch = "aarch64")]
     loop {
         unsafe { core::arch::asm!("wfe") };
