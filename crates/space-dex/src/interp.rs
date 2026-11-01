@@ -269,86 +269,95 @@ impl<'a> Interp<'a> {
                 self.set_reg(a, h)?;
                 nxt!(if op == 0x1a { 2 } else { 3 })
             }
-            0x1d => {
+            0x1c => return Err(InterpErr::UnsupportedOp(op)), // const-class（类对象模型路线图）
+            0x1d | 0x1e => nxt!(1), // monitor-enter / monitor-exit（无并发语义，no-op）
+            0x1f => nxt!(2), // check-cast（省略类型校验，语义兼容）
+            0x20 => return Err(InterpErr::UnsupportedOp(op)), // instance-of
+            0x21 => return Err(InterpErr::ArrayOpsUnsupported), // array-length
+            0x22 => {
+                // new-instance（21c，2 units）
                 let a = (inst & 0xff) as usize;
                 let t = word(insns, pc + 2)? as usize;
                 let cls = self.dex.types.get(t).cloned().unwrap_or_default();
                 let h = self.alloc_obj(cls);
                 self.set_reg(a, h)?;
-                nxt!(3)
+                nxt!(2)
             }
-            0x22 => return Err(InterpErr::Throw),
+            0x23 | 0x24 | 0x25 | 0x26 => return Err(InterpErr::ArrayOpsUnsupported), // new-array / filled-new-array 系 / fill-array-data
+            0x27 => return Err(InterpErr::Throw),
 
             // ---------- goto ----------
-            0x23 => {
+            0x28 => {
                 let off = ((inst as i8) as i32) * 2;
                 Step::Next((pc as i32 + off) as usize)
             }
-            0x24 => {
+            0x29 => {
                 let off = (word(insns, pc + 2)? as i16 as i32) * 2;
                 Step::Next((pc as i32 + off) as usize)
             }
-            0x25 => {
+            0x2a => {
                 let off = i32_at(insns, pc + 2)? * 2;
                 Step::Next((pc as i32 + off) as usize)
             }
+            0x2b | 0x2c => return Err(InterpErr::UnsupportedOp(op)), // packed/sparse-switch（路线图）
 
-            // ---------- cmp（23x，3 units） ----------
-            0x2c => {
+            // ---------- cmp（23x，2 units） ----------
+            0x2d..=0x30 => return Err(InterpErr::UnsupportedOp(op)), // 浮点比较（浮点路线图）
+            0x31 => {
+                // cmp-long（23x，2 units：A=word0 低 8，B=word1 低字节、C=word1 高字节）
                 let a = (inst & 0xff) as usize;
                 let w1 = word(insns, pc + 2)?;
                 let b = (w1 & 0xff) as usize;
-                let c = ((w1 >> 8) | (word(insns, pc + 4)? << 8)) as usize;
+                let c = (w1 >> 8) as usize;
                 let bv = self.wide(b)?;
                 let cv = self.wide(c)?;
                 self.set_reg(a, (bv.cmp(&cv) as i32) as u32)?;
-                nxt!(3)
+                nxt!(2)
             }
 
-            // ---------- if-test（22t，3 units） ----------
-            0x2d..=0x32 => {
-                let a = (inst & 0xff) as usize;
-                let w1 = word(insns, pc + 2)?;
-                let b = (w1 & 0xff) as usize;
-                let off = (((w1 >> 8) | (word(insns, pc + 4)? << 8)) as i16 as i32) * 2;
+            // ---------- if-test（22t，2 units：A/B 在 inst 高低半字节，off=word1） ----------
+            0x32..=0x37 => {
+                let a = (inst & 0x0f) as usize;
+                let b = (inst >> 4) as usize;
+                let off = (word(insns, pc + 2)? as i16 as i32) * 2;
                 let va = self.reg(a)? as i32;
                 let vb = self.reg(b)? as i32;
                 let taken = match op {
-                    0x2d => va == vb,
-                    0x2e => va != vb,
-                    0x2f => va < vb,
-                    0x30 => va >= vb,
-                    0x31 => va > vb,
-                    _ => va <= vb,
+                    0x32 => va == vb, // if-eq
+                    0x33 => va != vb, // if-ne
+                    0x34 => va < vb,  // if-lt
+                    0x35 => va >= vb, // if-ge
+                    0x36 => va > vb,  // if-gt
+                    _ => va <= vb,     // if-le
                 };
-                Step::Next(if taken { (pc as i32 + off) as usize } else { pc + 6 })
+                Step::Next(if taken { (pc as i32 + off) as usize } else { pc + 4 })
             }
             // if-testz（21t，2 units）
-            0x33..=0x38 => {
+            0x38..=0x3d => {
                 let a = (inst & 0xff) as usize;
                 let off = (word(insns, pc + 2)? as i16 as i32) * 2;
                 let va = self.reg(a)? as i32;
                 let taken = match op {
-                    0x33 => va == 0,
-                    0x34 => va != 0,
-                    0x35 => va < 0,
-                    0x36 => va >= 0,
-                    0x37 => va > 0,
-                    _ => va <= 0,
+                    0x38 => va == 0, // if-eqz
+                    0x39 => va != 0, // if-nez
+                    0x3a => va < 0,  // if-ltz
+                    0x3b => va >= 0, // if-gez
+                    0x3c => va > 0,  // if-gtz
+                    _ => va <= 0,    // if-lez
                 };
                 Step::Next(if taken { (pc as i32 + off) as usize } else { pc + 4 })
             }
 
             // ---------- 数组（未实现） ----------
-            0x46..=0x4f => return Err(InterpErr::ArrayOpsUnsupported),
+            0x3e | 0x3f => return Err(InterpErr::UnsupportedOp(op)),
+            0x40..=0x51 => return Err(InterpErr::ArrayOpsUnsupported),
 
-            // ---------- 实例字段 iget/iput（22c，3 units） ----------
+            // ---------- 实例字段 iget/iput（22c，2 units：A=word0 低 4、B=word0 高 4，idx=word1） ----------
             0x52..=0x5f => {
-                let a = (inst & 0xff) as usize;
-                let w1 = word(insns, pc + 2)?;
-                let b = (w1 & 0xff) as usize;
-                let fidx = ((w1 >> 8) | (word(insns, pc + 4)? << 8)) as u32;
-                if op < 0x59 {
+                let a = (inst & 0x0f) as usize;
+                let b = ((inst >> 4) & 0x0f) as usize;
+                let fidx = word(insns, pc + 2)? as u32;
+                if op <= 0x58 {
                     let obj = self.reg(b)?;
                     let v = self.instance_field(obj, fidx)?;
                     self.set_reg(a, v)?;
@@ -357,7 +366,7 @@ impl<'a> Interp<'a> {
                     let obj = self.reg(b)?;
                     self.set_instance_field(obj, fidx, v)?;
                 }
-                nxt!(3)
+                nxt!(2)
             }
             // 静态字段 sget/sput（21c，2 units）
             0x60..=0x6d => {
@@ -374,82 +383,116 @@ impl<'a> Interp<'a> {
             }
 
             // ---------- 一元/转换（12x，1 unit） ----------
-            0x7b..=0x90 => {
+            0x7b..=0x8f => {
                 let a = (inst & 0xff) as usize;
                 let b = (inst >> 8) as usize;
-                let v: u32 = match op {
-                    0x7b => (self.reg(b)? as i32).wrapping_neg() as u32,
-                    0x7c => !self.reg(b)?,
-                    0x7d => self.wide(b)?.wrapping_neg() as u32,
-                    0x7e => !(self.wide(b)?) as u32,
-                    0x81 => self.wide(b)? as u32,
-                    0x84 => (self.wide(b)? & 0xffff_ffff) as u32,
-                    0x8e => (self.reg(b)? as u8) as u32,
-                    0x8f => (self.reg(b)? as u16) as u32,
-                    0x90 => (self.reg(b)? as u16 as i16) as u32,
+                match op {
+                    0x7b => {
+                        let v = (self.reg(b)? as i32).wrapping_neg() as u32;
+                        self.set_reg(a, v)?;
+                    }
+                    0x7c => {
+                        let v = !self.reg(b)?;
+                        self.set_reg(a, v)?;
+                    }
+                    0x7d => {
+                        let v = self.wide(b)?.wrapping_neg();
+                        self.set_wide(a, v as i64)?;
+                    }
+                    0x7e => {
+                        let v = !self.wide(b)?;
+                        self.set_wide(a, v as i64)?;
+                    }
+                    0x81 => {
+                        let v = (self.reg(b)? as i32 as i64);
+                        self.set_wide(a, v)?;
+                    }
+                    0x84 => {
+                        let v = (self.wide(b)? & 0xffff_ffff) as u32;
+                        self.set_reg(a, v)?;
+                    }
+                    0x8d => {
+                        let v = (self.reg(b)? as u8 as i8) as u32;
+                        self.set_reg(a, v)?;
+                    }
+                    0x8e => {
+                        let v = (self.reg(b)? as u8) as u32;
+                        self.set_reg(a, v)?;
+                    }
+                    0x8f => {
+                        let v = (self.reg(b)? as u16 as i16) as u32;
+                        self.set_reg(a, v)?;
+                    }
                     _ => return Err(InterpErr::UnsupportedOp(op)),
-                };
-                self.set_reg(a, v)?;
+                }
                 nxt!(1)
             }
 
-            // ---------- 二进制 int（23x，3 units） ----------
-            0x91..=0x9b => {
+            // ---------- 二进制 int（23x，2 units：A=word0 低 8，B=word1 低字节、C=word1 高字节） ----------
+            0x90..=0x9b => {
                 let a = (inst & 0xff) as usize;
                 let w1 = word(insns, pc + 2)?;
                 let b = (w1 & 0xff) as usize;
-                let c = ((w1 >> 8) | (word(insns, pc + 4)? << 8)) as usize;
+                let c = (w1 >> 8) as usize;
                 let x = self.reg(b)? as i32;
                 let y = self.reg(c)? as i32;
                 let v = binop_int(op, x, y)?;
                 self.set_reg(a, v as u32)?;
-                nxt!(3)
+                nxt!(2)
             }
-            // 二进制 long（23x，3 units）
-            0x9c..=0xa8 => {
+            // 二进制 long（23x，2 units）
+            0x9c..=0xa6 => {
                 let a = (inst & 0xff) as usize;
                 let w1 = word(insns, pc + 2)?;
                 let b = (w1 & 0xff) as usize;
-                let c = ((w1 >> 8) | (word(insns, pc + 4)? << 8)) as usize;
+                let c = (w1 >> 8) as usize;
                 let x = self.wide(b)? as i64;
                 let y = self.wide(c)? as i64;
                 let v = binop_long(op, x, y)?;
                 self.set_wide(a, v)?;
-                nxt!(3)
+                nxt!(2)
             }
-            0xb0..=0xcf => return Err(InterpErr::UnsupportedOp(op)),
+            0xa7..=0xaf => return Err(InterpErr::UnsupportedOp(op)), // 浮点 binop（路线图）
 
-            // ---------- /2addr（12x，1 unit） ----------
-            0xd0..=0xd7 => {
+            // ---------- binop/2addr（12x，1 unit） ----------
+            0xb0..=0xcf => {
                 let a = (inst & 0x0f) as usize;
                 let b = (inst >> 4) as usize;
-                let x = self.reg(a)? as i32;
-                let y = self.reg(b)? as i32;
-                let v = binop_int(op, x, y)?;
-                self.set_reg(a, v as u32)?;
+                if op <= 0xba {
+                    let x = self.reg(a)? as i32;
+                    let y = self.reg(b)? as i32;
+                    let v = binop_int_2addr(op, x, y)?;
+                    self.set_reg(a, v as u32)?;
+                } else if op <= 0xc5 {
+                    let x = self.wide(a)? as i64;
+                    let y = self.wide(b)? as i64;
+                    let v = binop_long_2addr(op, x, y)?;
+                    self.set_wide(a, v)?;
+                } else {
+                    return Err(InterpErr::UnsupportedOp(op)); // 浮点 /2addr
+                }
                 nxt!(1)
             }
 
-            // ---------- /lit16（22s，3 units） ----------
-            0xd8..=0xdf => {
-                let a = (inst & 0xff) as usize;
-                let w1 = word(insns, pc + 2)?;
-                let b = (w1 & 0xff) as usize;
-                let lit = (((w1 >> 8) | (word(insns, pc + 4)? << 8)) as i16) as i32;
+            // ---------- /lit16（22s，2 units：A=word0 高字节低 4 位、B=高字节高 4 位，lit=word1 16 位） ----------
+            0xd0..=0xd7 => {
+                let a = ((inst >> 8) & 0xf) as usize;
+                let b = ((inst >> 12) & 0xf) as usize;
+                let lit = word(insns, pc + 2)? as i16 as i32;
                 let x = self.reg(b)? as i32;
-                let v = binop_lit(op, x, lit)?;
+                let v = binop_lit16(op, x, lit)?;
                 self.set_reg(a, v as u32)?;
-                nxt!(3)
+                nxt!(2)
             }
 
             // ---------- /lit8（22b，2 units） ----------
-            0xe0..=0xea => {
+            0xd8..=0xe2 => {
                 let a = (inst & 0xff) as usize;
                 let w1 = word(insns, pc + 2)?;
                 let b = (w1 & 0xff) as usize;
                 let lit = ((w1 >> 8) as i8) as i32;
                 let x = self.reg(b)? as i32;
-                let v = binop_lit(op, x, lit)?;
+                let v = binop_lit8(op, x, lit)?;
                 self.set_reg(a, v as u32)?;
                 nxt!(2)
             }
@@ -645,34 +688,66 @@ fn param_widths(params: &[String]) -> Vec<u32> {
 
 fn binop_int(op: u8, x: i32, y: i32) -> R<i32> {
     Ok(match op {
-        0x91 | 0xd0 | 0xd8 | 0xe0 => x.wrapping_add(y),
-        0x92 | 0xd1 => x.wrapping_sub(y),
-        0x93 | 0xd2 | 0xd9 | 0xe2 => x.wrapping_mul(y),
-        0x94 | 0xd3 | 0xda | 0xe3 => if y == 0 { 0 } else { x.wrapping_div(y) },
-        0x95 | 0xd4 | 0xdb | 0xe4 => if y == 0 { 0 } else { x.wrapping_rem(y) },
-        0x96 | 0xd5 | 0xdd | 0xe5 => x & y,
-        0x97 | 0xd6 | 0xde | 0xe6 => x | y,
-        0x98 | 0xd7 | 0xdf | 0xe7 => x ^ y,
-        0x99 | 0xe8 => x.wrapping_shl(y as u32 & 31),
-        0x9a | 0xe9 => x.wrapping_shr(y as u32 & 31),
-        0x9b | 0xea => ((x as u32).wrapping_shr(y as u32 & 31)) as i32,
+        0x90 => x.wrapping_add(y),
+        0x91 => x.wrapping_sub(y),
+        0x92 => x.wrapping_sub(y),
+        0x93 => x.wrapping_mul(y),
+        0x94 => if y == 0 { 0 } else { x.wrapping_div(y) },
+        0x95 => if y == 0 { 0 } else { x.wrapping_rem(y) },
+        0x96 => x & y,
+        0x97 => x | y,
+        0x98 => x ^ y,
+        0x99 => x.wrapping_shl(y as u32 & 31),
+        0x9a => x.wrapping_shr(y as u32 & 31),
+        0x9b => ((x as u32).wrapping_shr(y as u32 & 31)) as i32,
         _ => return Err(InterpErr::UnsupportedOp(op)),
     })
 }
 
-fn binop_lit(op: u8, x: i32, lit: i32) -> R<i32> {
+fn binop_int_2addr(op: u8, x: i32, y: i32) -> R<i32> {
     Ok(match op {
-        0xd8 | 0xe0 => x.wrapping_add(lit),
-        0xd9 | 0xe1 => lit.wrapping_sub(x),
-        0xda | 0xe2 => x.wrapping_mul(lit),
-        0xdb | 0xe3 => if lit == 0 { 0 } else { x.wrapping_div(lit) },
-        0xdc | 0xe4 => if lit == 0 { 0 } else { x.wrapping_rem(lit) },
-        0xdd | 0xe5 => x & lit,
-        0xde | 0xe6 => x | lit,
-        0xdf | 0xe7 => x ^ lit,
-        0xe8 => x.wrapping_shl(lit as u32 & 31),
-        0xe9 => x.wrapping_shr(lit as u32 & 31),
-        0xea => ((x as u32).wrapping_shr(lit as u32 & 31)) as i32,
+        0xb0 => x.wrapping_add(y),
+        0xb1 => x.wrapping_sub(y),
+        0xb2 => x.wrapping_mul(y),
+        0xb3 => if y == 0 { 0 } else { x.wrapping_div(y) },
+        0xb4 => if y == 0 { 0 } else { x.wrapping_rem(y) },
+        0xb5 => x & y,
+        0xb6 => x | y,
+        0xb7 => x ^ y,
+        0xb8 => x.wrapping_shl(y as u32 & 31),
+        0xb9 => x.wrapping_shr(y as u32 & 31),
+        0xba => ((x as u32).wrapping_shr(y as u32 & 31)) as i32,
+        _ => return Err(InterpErr::UnsupportedOp(op)),
+    })
+}
+
+fn binop_lit16(op: u8, x: i32, lit: i32) -> R<i32> {
+    Ok(match op {
+        0xd0 => x.wrapping_add(lit),
+        0xd1 => lit.wrapping_sub(x),
+        0xd2 => x.wrapping_mul(lit),
+        0xd3 => if lit == 0 { 0 } else { x.wrapping_div(lit) },
+        0xd4 => if lit == 0 { 0 } else { x.wrapping_rem(lit) },
+        0xd5 => x & lit,
+        0xd6 => x | lit,
+        0xd7 => x ^ lit,
+        _ => return Err(InterpErr::UnsupportedOp(op)),
+    })
+}
+
+fn binop_lit8(op: u8, x: i32, lit: i32) -> R<i32> {
+    Ok(match op {
+        0xd8 => x.wrapping_add(lit),
+        0xd9 => lit.wrapping_sub(x),
+        0xda => x.wrapping_mul(lit),
+        0xdb => if lit == 0 { 0 } else { x.wrapping_div(lit) },
+        0xdc => if lit == 0 { 0 } else { x.wrapping_rem(lit) },
+        0xdd => x & lit,
+        0xde => x | lit,
+        0xdf => x ^ lit,
+        0xe0 => x.wrapping_shl(lit as u32 & 31),
+        0xe1 => x.wrapping_shr(lit as u32 & 31),
+        0xe2 => ((x as u32).wrapping_shr(lit as u32 & 31)) as i32,
         _ => return Err(InterpErr::UnsupportedOp(op)),
     })
 }
@@ -690,6 +765,23 @@ fn binop_long(op: u8, x: i64, y: i64) -> R<i64> {
         0xa4 => x.wrapping_shl(y as u32 & 63),
         0xa5 => x.wrapping_shr(y as u32 & 63),
         0xa6 => ((x as u64).wrapping_shr(y as u32 & 63)) as i64,
+        _ => return Err(InterpErr::UnsupportedOp(op)),
+    })
+}
+
+fn binop_long_2addr(op: u8, x: i64, y: i64) -> R<i64> {
+    Ok(match op {
+        0xbb => x.wrapping_add(y),
+        0xbc => x.wrapping_sub(y),
+        0xbd => x.wrapping_mul(y),
+        0xbe => if y == 0 { 0 } else { x.wrapping_div(y) },
+        0xbf => if y == 0 { 0 } else { x.wrapping_rem(y) },
+        0xc0 => x & y,
+        0xc1 => x | y,
+        0xc2 => x ^ y,
+        0xc3 => x.wrapping_shl(y as u32 & 63),
+        0xc4 => x.wrapping_shr(y as u32 & 63),
+        0xc5 => ((x as u64).wrapping_shr(y as u32 & 63)) as i64,
         _ => return Err(InterpErr::UnsupportedOp(op)),
     })
 }

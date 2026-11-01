@@ -27,7 +27,7 @@ pub enum DexErr {
 
 pub type R<T> = core::result::Result<T, DexErr>;
 
-const DEX_MAGIC: &[u8; 8] = b"dex\n035\0";
+const DEX_MAGIC_PREFIX: &[u8; 4] = b"dex\n";
 const HEADER_SIZE: usize = 0x70;
 
 /// 方法 id（全局 method_ids 表中的一项，解析后具体化）
@@ -84,7 +84,7 @@ impl<'a> DexFile<'a> {
         if data.len() < HEADER_SIZE {
             return Err(DexErr::BadHeader);
         }
-        if &data[0..8] != DEX_MAGIC {
+        if &data[0..4] != DEX_MAGIC_PREFIX {
             return Err(DexErr::BadMagic);
         }
         // 版本：035 / 036 / 037 / 038 / 039 / 040
@@ -305,8 +305,19 @@ pub fn parse_class_data_methods(data: &[u8], class_data_off: u32) -> R<Vec<(u32,
         let _ = r.uleb().map_err(err_of)?;
     }
     let mut out = Vec::new();
+    // direct 与 virtual 是两个独立列表：各自从 method_ids 起点（0）开始累加。
+    // 若共享一个计数器，virtual[0] 的 diff 会被误加成 direct 末尾的绝对索引，
+    // 导致全部错位（AOSP encoded_method 的 method_idx_diff 相对"本列表前一个方法"）。
     let mut last: u32 = 0;
-    for _ in 0..dmethods + vmethods {
+    for _ in 0..dmethods {
+        let diff = r.uleb().map_err(err_of)?;
+        last += diff;
+        let flags = r.uleb().map_err(err_of)?;
+        let code_off = r.uleb().map_err(err_of)?;
+        out.push((last, flags, if code_off == 0 { -1 } else { code_off as i32 }));
+    }
+    let mut last: u32 = 0;
+    for _ in 0..vmethods {
         let diff = r.uleb().map_err(err_of)?;
         last += diff;
         let flags = r.uleb().map_err(err_of)?;
