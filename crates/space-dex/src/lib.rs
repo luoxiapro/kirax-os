@@ -33,10 +33,11 @@
 
 extern crate alloc;
 
-// host 构建（cargo build / cargo test，未开 kir-standalone）：链接 std 提供
-// 全局分配器与 panic_handler（与 apkcompat 的 kir-standalone 语义一致）。
-#[cfg(not(feature = "kir-standalone"))]
-extern crate std;
+// host 构建/测试（cargo build / cargo test）：分配器与 panic_handler 由 std
+// 测试 harness 或最终宿主提供；thumbv7a 作为依赖编译时无需 std。
+// 独立打包（--features kir-standalone）时由下方 standalone 模块提供
+// 最小 allocator + panic handler（仅用于链接通过，Space OS 内核内运行时
+// 已提供全局分配器，勿在真机启用本 feature）。
 
 #[cfg(feature = "kir-standalone")]
 #[allow(static_mut_refs)]

@@ -27,8 +27,20 @@ OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, "apps/apkcompat/a
 # 1. 提取代码段（.text + .rodata，去掉 BSS 与符号表）
 # ---------------------------------------------------------------------------
 def which(candidates):
-    """返回 PATH 中第一个可用的工具名，都没有则 None。"""
+    """返回第一个可用工具；rustup 自带 LLVM 工具优先（llvm-objcopy 支持
+    ARM EABI，GNU objcopy 不认 thumbv7a 的 ELF，不能拿来提取 .text/.rodata）。"""
     import shutil
+    import glob
+    # 1) rustup 工具链（~/.rustup/toolchains/<tc>/lib/rustlib/<host>/bin 或 <tc>/bin）
+    for c in candidates:
+        for pat in (
+            os.path.expanduser("~/.rustup/toolchains/*/lib/rustlib/*/bin/" + c),
+            os.path.expanduser("~/.rustup/toolchains/*/bin/" + c),
+        ):
+            hits = sorted(glob.glob(pat))
+            if hits:
+                return hits[0]
+    # 2) PATH（arm-none-eabi-* 交叉工具链其次，GNU 兜底）
     for c in candidates:
         if shutil.which(c):
             return c
@@ -65,7 +77,7 @@ def extract_code():
     with open(tmp, "wb") as f:
         for o in sorted(os.listdir(ar_tmp)):
             if o.endswith(".o"):
-                os.system("%s -O binary -j .text -j .rodata %s/%s %s" % (oc, ar_tmp, o, tmp + ".part"))
+                os.system("%s -O binary -j '.text*' -j '.rodata*' %s/%s %s" % (oc, ar_tmp, o, tmp + ".part"))
                 if os.path.exists(tmp + ".part"):
                     f.write(open(tmp + ".part", "rb").read())
                     os.remove(tmp + ".part")
