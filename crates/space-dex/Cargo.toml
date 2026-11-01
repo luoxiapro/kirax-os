@@ -1,0 +1,19 @@
+[package]
+name = "space-dex"
+version = "0.1.0"
+edition = "2021"
+description = "Space OS DEX 解析器与字节码解释器（APK 兼容层核心引擎，no_std + host 可测）"
+
+[lib]
+crate-type = ["rlib", "staticlib"]
+
+[dependencies]
+
+[features]
+default = []
+# 独立打包时提供最小 allocator + panic handler（与 apkcompat kir-standalone 语义一致）
+kir-standalone = []
+
+[profile.release]
+opt-level = 3
+panic = "abort"
