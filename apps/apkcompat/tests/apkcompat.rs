@@ -99,7 +99,6 @@ fn make_manifest_axml(package: &str) -> Vec<u8> {
         cur += 1 + l + 1; // len + chars + null
     }
     let strings_start = 28 + offsets.len() * 4;
-    let pool_body_len = strings_start + utf16_data.len() * 2;
     // 布局：type@0(4) headerSize@4(2)=28 size@6(4) stringCount@10(4)
     //       styleCount@14(4) flags@18(4) stringsStart@22(4) stylesStart@26(4) offsets@28
     pool.extend_from_slice(&CHUNK_STRING.to_le_bytes()); // type@0 (u16)

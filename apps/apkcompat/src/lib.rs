@@ -1,4 +1,4 @@
-//! # APK 兼容器 —— APK(ZIP) 解析器与兼容层管理器
+//! # APK 兼容器 —— APK(ZIP) 解析器、Deflate 解压、DEX 兼容解码与兼容层管理器
 //!
 //! 参考鸿蒙"卓易通"（安卓兼容层应用）的思路，为 Space OS 提供 APK 的
 //! **识别 → 解析 → 安装管理 → 兼容运行** 链路。
@@ -6,15 +6,19 @@
 //! 本模块为纯逻辑代码，`no_std`（thumbv7a-none-eabi 可编入 .kir），同时
 //! 可在主机 `cargo test` 直接单测，是 Space OS 应用层"自带软件"的完整实现。
 //!
-//! 真实可运行部分（Phase 5 交付）：
+//! 真实可运行部分：
 //!   1. ZIP 容器解析：EOCD 定位 → 中心目录 → Local Header → 文件提取
-//!   2. AndroidManifest.xml **二进制 XML** 解析：提取 package、label 资源引用
-//!   3. resources.arsc 路径映射 + strings.xml 二进制解析：解析出应用显示名
-//!   4. 图标提取：从 res/mipmap-* 目录取出 PNG 原始数据
-//!   5. 安装/卸载/列表管理：挂载到 FAT32 的 /APKS 目录
+//!   2. Deflate 解压（RFC 1951 手写 inflate）：真实 APK 的 classes.dex
+//!      / resources.arsc 多为 method=8 压缩
+//!   3. AndroidManifest.xml **二进制 XML** 解析：提取 package、label 资源引用
+//!   4. resources.arsc 路径映射 + strings.xml 二进制解析：解析出应用显示名
+//!   5. 图标提取：从 res/mipmap-* 目录取出 PNG 原始数据
+//!   6. **DEX 兼容解码**（接入 crates/space-dex 引擎）：类/方法/指令统计、
+//!      opcode 覆盖与未支持清单、方法级 .kir 转译骨架（AOT 方向）
+//!   7. 安装/卸载/列表管理：挂载到 FAT32 的 /APKS 目录
 //!
 //! 路线图（后续阶段，见 README.md）：
-//!   - DEX 字节码解码与解释器（或 AOT 转译到 .kir 中间码）
+//!   - DEX 解释器执行（interp.rs 已在 space-dex 就绪，接入做完整运行）
 //!   - Binder 服务抽象（Intent/PackageManager/ActivityManager 微内核）
 //!   - ART-like 对象模型（堆内句柄 + 弱引用 + GC 标清）
 //!
@@ -35,6 +39,14 @@ extern crate alloc;
 #[allow(unused_imports)]
 use alloc::format;
 use alloc::vec::Vec;
+
+// ----------------------------------------------------------------------------
+// 子模块
+// ----------------------------------------------------------------------------
+/// Deflate (RFC 1951) 解压
+pub mod inflate;
+/// DEX 兼容解码与 .kir 转译骨架（接入 space-dex 引擎）
+pub mod dexcompat;
 
 // ----------------------------------------------------------------------------
 // 独立打包支持（feature = "kir-standalone"）：
@@ -87,12 +99,16 @@ pub enum ApkError {
     BadCentralDirectory,
     /// 指定的成员不存在
     EntryNotFound,
-    /// 不支持的压缩方法（目前仅支持 Store；Deflate 走 inflate 路线图）
+    /// 不支持的压缩方法（目前支持 Store 与 Deflate；其余走路线图）
     UnsupportedCompression(u16),
     /// AndroidManifest 二进制 XML 解析失败
     BadBinaryXml,
     /// 字符串资源引用无法解析
     BadStringRef,
+    /// DEX 解析失败（魔数/头表损坏）
+    BadDex,
+    /// Deflate 解压失败
+    Inflate(crate::inflate::InflateError),
 }
 
 impl core::fmt::Display for ApkError {
@@ -106,6 +122,8 @@ impl core::fmt::Display for ApkError {
             UnsupportedCompression(m) => write!(f, "不支持的压缩方法 {m}"),
             BadBinaryXml => write!(f, "AndroidManifest 二进制 XML 损坏"),
             BadStringRef => write!(f, "字符串资源引用解析失败"),
+            BadDex => write!(f, "DEX 解析失败（魔数或头表损坏）"),
+            Inflate(e) => write!(f, "Deflate 解压失败: {e}"),
         }
     }
 }
@@ -204,9 +222,9 @@ impl<'a> Apk<'a> {
             .ok_or(ApkError::EntryNotFound)
     }
 
-    /// 提取条目内容（支持 Store；Deflate 返回 UnsupportedCompression）
+    /// 提取条目内容（支持 Store 与 Deflate；其余压缩方法返回 UnsupportedCompression）
     pub fn extract(&self, entry: &ZipEntry) -> Result<Vec<u8>> {
-        if entry.method != 0 {
+        if entry.method != 0 && entry.method != 8 {
             return Err(ApkError::UnsupportedCompression(entry.method));
         }
         // Local Header：sig(4) ver(2) flags(2) method(2) time(2) date(2)
@@ -222,11 +240,18 @@ impl<'a> Apk<'a> {
         if data_start + size > self.data.len() {
             return Err(ApkError::BadCentralDirectory);
         }
-        // Store：压缩大小 = 原始大小
-        if entry.compressed_size != entry.uncompressed_size {
-            return Err(ApkError::UnsupportedCompression(entry.method));
+        let raw = &self.data[data_start..data_start + size];
+        match entry.method {
+            0 => {
+                // Store：压缩大小 = 原始大小
+                if entry.compressed_size != entry.uncompressed_size {
+                    return Err(ApkError::UnsupportedCompression(entry.method));
+                }
+                Ok(raw.to_vec())
+            }
+            8 => inflate::inflate(raw).map_err(ApkError::Inflate),
+            _ => Err(ApkError::UnsupportedCompression(entry.method)),
         }
-        Ok(self.data[data_start..data_start + size].to_vec())
     }
 }
 
@@ -274,8 +299,6 @@ fn u32_at(d: &[u8], o: usize) -> u32 {
 const AXML_MAGIC: u32 = 0x0008_0003;
 /// StringPool chunk 类型（u16）
 const CHUNK_STRING: u16 = 0x0001;
-/// ResourceMap chunk 类型（u16）
-const CHUNK_RESOURCE: u16 = 0x0180;
 /// StartElement chunk 类型（u16）
 const CHUNK_START_ELEMENT: u16 = 0x0102;
 

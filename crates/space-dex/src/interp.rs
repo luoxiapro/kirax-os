@@ -404,7 +404,7 @@ impl<'a> Interp<'a> {
                         self.set_wide(a, v as i64)?;
                     }
                     0x81 => {
-                        let v = (self.reg(b)? as i32 as i64);
+                        let v = self.reg(b)? as i32 as i64;
                         self.set_wide(a, v)?;
                     }
                     0x84 => {

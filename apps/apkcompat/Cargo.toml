@@ -15,6 +15,8 @@ crate-type = ["rlib", "staticlib"]
 #   - 真机 .kir 编译：thumbv7a-none-eabi（alloc 由 Space OS 运行时提供）
 #   - feature `kir-standalone`：独立打包时提供最小 allocator + panic handler
 [dependencies]
+# DEX 解析/解码引擎（同仓库 crates/space-dex，经 037 真实样本 baksmali 审计）
+space-dex = { path = "../../crates/space-dex" }
 
 [features]
 kir-standalone = []
