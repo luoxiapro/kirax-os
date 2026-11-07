@@ -1,0 +1,9 @@
+[package]
+name = "kirax-cli"
+version = "0.1.0"
+edition = "2021"
+description = "KiraX OS 应用构建命令行工具：new/build/run/package/install"
+
+[[bin]]
+name = "kirax-cli"
+path = "src/main.rs"

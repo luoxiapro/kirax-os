@@ -1,4 +1,4 @@
-//! # Space OS AArch64 启动代码（global_asm! 内嵌，由 rustc/LLVM 汇编）
+//! # KiraX OS AArch64 启动代码（global_asm! 内嵌，由 rustc/LLVM 汇编）
 //!
 //! 树莓派 3 (BCM2837, Cortex-A53, AArch64)。
 //! 职责：EL2→EL1 降级、核识别、VMSAv8-64 页表初始化、开 MMU、清 BSS、跳 kernel_main。

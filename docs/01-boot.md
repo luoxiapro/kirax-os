@@ -4,7 +4,7 @@
 在树莓派 2（BCM2709，ARMv7-A）上用 ARMv7 汇编完成：
 - 设置 SVC 模式与栈指针
 - mini UART 初始化
-- 输出 "Hello, Space OS!"
+- 输出 "Hello, KiraX OS!"
 - 链接脚本 + Makefile，先 QEMU 后真机
 
 ## 工具链

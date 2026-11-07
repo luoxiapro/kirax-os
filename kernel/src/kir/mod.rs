@@ -12,7 +12,7 @@ use crate::scheduler;
 use crate::klog;
 use alloc::vec::Vec;
 use core::sync::atomic::{AtomicBool, Ordering};
-use space_core::kir::{extract_code, KirHeader, Manifest};
+use kirax_core::kir::{extract_code, KirHeader, Manifest};
 
 /// SD/FAT32 是否已挂载（由 sd.rs 在初始化完成后置位）
 static FS_READY: AtomicBool = AtomicBool::new(false);

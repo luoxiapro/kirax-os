@@ -14,7 +14,7 @@ use crate::klog;
 use crate::sync::SpinLock;
 use alloc::vec;
 use alloc::vec::Vec;
-use space_core::align_up;
+use kirax_core::align_up;
 
 /// 默认分辨率（树莓派 2 性能友好的中间档）
 pub const DEFAULT_W: u32 = 1280;

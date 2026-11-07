@@ -163,14 +163,14 @@ const CHUNK_STRING: u16 = 0x0001;
 
 #[test]
 fn zip_eocd_and_extract() {
-    let zip = make_zip(&[("hello.txt", b"Hello, Space OS!"), ("res/mipmap/ic.png", b"PNGDATA")]);
+    let zip = make_zip(&[("hello.txt", b"Hello, KiraX OS!"), ("res/mipmap/ic.png", b"PNGDATA")]);
     let apk = Apk::parse(&zip).unwrap();
     let names = apk.names();
     assert!(names.contains(&"hello.txt"));
     assert!(names.contains(&"res/mipmap/ic.png"));
     let e = apk.find("hello.txt").unwrap();
     let data = apk.extract(e).unwrap();
-    assert_eq!(data, b"Hello, Space OS!");
+    assert_eq!(data, b"Hello, KiraX OS!");
 }
 
 #[test]
@@ -187,9 +187,9 @@ fn zip_entry_not_found() {
 
 #[test]
 fn manifest_package_extracted() {
-    let axml = make_manifest_axml("com.spaceos.demo");
+    let axml = make_manifest_axml("com.kirax.demo");
     let info = apkcompat::parse_manifest_xml(&axml).unwrap();
-    assert_eq!(info.package, "com.spaceos.demo");
+    assert_eq!(info.package, "com.kirax.demo");
 }
 
 #[test]

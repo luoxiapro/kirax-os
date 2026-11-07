@@ -1,6 +1,6 @@
-# Glass 设计规范 — Space OS 视觉系统版本 1.0
+# Glass 设计规范 — KiraX OS 视觉系统版本 1.0
 
-> 适用范围：Space OS 桌面环境所有窗口、面板、控件、通知、开始菜单、任务栏。
+> 适用范围：KiraX OS 桌面环境所有窗口、面板、控件、通知、开始菜单、任务栏。
 > 设计目标：在 BCM2709（Cortex-A7 @ 900MHz，无 GPU 模糊）上实现 iOS 26 / visionOS 风格的液态玻璃质感，
 > 通过低分辨率预计算模糊 + 脏矩形缓存 + 性能降级开关达成可用帧率。
 
@@ -17,7 +17,7 @@
 | 装饰矢量 | 1 个行星（右下，行星橙 `#FF9F45` + 1 条轨道环 `#4FD8EB`）+ 1 枚火箭（左上，星云紫 `#8B7CF6`） | 几何矢量，禁 emoji |
 | 壁纸模糊预计算 | 壁纸先 1/2 降采样（如 1920×1080 → 960×540） | 模糊在降采样层做，再放大回去 |
 
-> 上述令牌权威来源为 `crates/space-core/src/glass.rs`（`palette` / `GLASS`），桌面落地见 `kernel/src/desktop/mod.rs`。
+> 上述令牌权威来源为 `crates/kirax-core/src/glass.rs`（`palette` / `GLASS`），桌面落地见 `kernel/src/desktop/mod.rs`。
 
 壁纸层是唯一被模糊的层。所有玻璃面板只引用壁纸的降采样模糊缓存，**不实时模糊壁纸全分辨率**。
 

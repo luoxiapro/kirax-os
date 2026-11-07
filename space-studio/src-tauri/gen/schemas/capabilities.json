@@ -1,1 +1,0 @@
-{"default":{"identifier":"default","description":"Space Studio 主窗口默认权限","local":true,"windows":["main"],"permissions":["core:default","shell:allow-open","shell:allow-spawn","shell:allow-kill"]}}

@@ -1,8 +1,8 @@
 [package]
 name = "apkcompat"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2021"
-description = "Space OS APK 兼容层（参考鸿蒙卓易通）：APK(ZIP) 解析 + AndroidManifest 二进制 XML 解析"
+description = "KiraX OS APK 兼容层（参考鸿蒙卓易通）：APK(ZIP) 解析 + AndroidManifest 二进制 XML 解析"
 
 [lib]
 name = "apkcompat"
@@ -12,11 +12,11 @@ crate-type = ["rlib", "staticlib"]
 
 # 无第三方依赖；no_std + alloc 设计：
 #   - 主机 `cargo test`：直接运行单测（alloc 由 std 提供）
-#   - 真机 .kir 编译：thumbv7a-none-eabi（alloc 由 Space OS 运行时提供）
+#   - 真机 .kir 编译：thumbv7a-none-eabi（alloc 由 KiraX OS 运行时提供）
 #   - feature `kir-standalone`：独立打包时提供最小 allocator + panic handler
 [dependencies]
-# DEX 解析/解码引擎（同仓库 crates/space-dex，经 037 真实样本 baksmali 审计）
-space-dex = { path = "../../crates/space-dex" }
+# DEX 解析/解码引擎（同仓库 crates/kirax-dex，经 037 真实样本 baksmali 审计）
+kirax-dex = { path = "../../crates/kirax-dex" }
 
 [features]
 kir-standalone = []

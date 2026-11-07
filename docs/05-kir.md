@@ -17,7 +17,7 @@
 ...            manifest（JSON 文本）
 ```
 
-加载器在 kernel 中 `crates/space-core/src/kir.rs` 解析头、校验魔数、提取代码段。
+加载器在 kernel 中 `crates/kirax-core/src/kir.rs` 解析头、校验魔数、提取代码段。
 
 ## 用户态 mini libc
 
@@ -34,8 +34,8 @@
 
 | 应用 | 说明 |
 |---|---|
-| Hello | 最小示例应用（`apps/hello/manifest.json` 模板，内容 "Hello, Space OS!"） |
-| About Space OS | 信息窗口：版本、架构、Glass 版本 |
+| Hello | 最小示例应用（`apps/hello/manifest.json` 模板，内容 "Hello, KiraX OS!"） |
+| About KiraX OS | 信息窗口：版本、架构、Glass 版本 |
 | Calculator | 简易计算器 |
 | Clock | 实时时钟 |
 | Editor | 文本编辑器 |

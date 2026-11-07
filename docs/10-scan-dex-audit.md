@@ -6,12 +6,12 @@
 
 | 项 | 值 |
 |---|---|
-| 037 样本 | `space-studio/src-tauri/gen/android/app/build/intermediates/dex/universalRelease/minifyUniversalReleaseWithR8/classes.dex`（2013104B，magic `dex\n037`） |
+| 037 样本 | `kirax-studio/src-tauri/gen/android/app/build/intermediates/dex/universalRelease/minifyUniversalReleaseWithR8/classes.dex`（2013104B，magic `dex\n037`） |
 | 头部表 | 11022 strings / 2860 types / 4105 protos / 6661 fields / 16439 methods / 1965 classes |
 | 035 回归样本 | pianshu 构建产物 classes.dex（3920B） |
 | 权威 oracle | baksmali 3.0.10 反汇编产物：每类 smali + 逐地址 dump（912351 行） |
 
-## 2. 指令长度修复链（crates/space-dex，commit 06b497a）
+## 2. 指令长度修复链（crates/kirax-dex，commit 06b497a）
 
 | # | 修复 | 实证依据 |
 |---|---|---|
@@ -40,9 +40,9 @@
 
 ```bash
 # 单元测试
-cargo test -p space-dex            # 11/11 全绿
+cargo test -p kirax-dex            # 11/11 全绿
 
-# 重扫 037 / 035（在 crates/space-dex 下）
+# 重扫 037 / 035（在 crates/kirax-dex 下）
 cargo run --quiet --example scan_dex -- <037_classes.dex>   # 期望仅 0x0d x790
 cargo run --quiet --example scan_dex -- <035_classes.dex>   # 期望 0 未支持
 
@@ -54,4 +54,4 @@ python3 scripts/verify_scan_vs_baksmali.py <classes.dex> <smaliout_dir>
 ## 5. 提交记录
 
 - `06b497a` dex: 官方指令长度修正（上述修复链）+ 037 幻影清零
-- `4918cb0` space-dex: 逐方法对拍脚本（本报告结论的可复现依据）
+- `4918cb0` kirax-dex: 逐方法对拍脚本（本报告结论的可复现依据）

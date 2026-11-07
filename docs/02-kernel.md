@@ -33,7 +33,7 @@
 
 ## 伙伴分配器
 
-- `crates/space-core/src/buddy.rs`，阶语义用**相对阶**（min_order=12 即 4KB 为最小块）。
+- `crates/kirax-core/src/buddy.rs`，阶语义用**相对阶**（min_order=12 即 4KB 为最小块）。
 - 块头：magic@0(u32) + next@8(u64)，next=u64::MAX 表示链尾。
 - host 端 `cargo test` 单测覆盖：正常分配、零字节、释放合并、重复释放拒绝、碎片统计。
 

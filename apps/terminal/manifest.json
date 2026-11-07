@@ -1,7 +1,7 @@
 {
   "name": "terminal",
   "title": "Terminal",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "icon": "terminal",
   "width": 720,
   "height": 400,

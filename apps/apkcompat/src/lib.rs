@@ -1,10 +1,10 @@
 //! # APK 兼容器 —— APK(ZIP) 解析器、Deflate 解压、DEX 兼容解码与兼容层管理器
 //!
-//! 参考鸿蒙"卓易通"（安卓兼容层应用）的思路，为 Space OS 提供 APK 的
+//! 参考鸿蒙"卓易通"（安卓兼容层应用）的思路，为 KiraX OS 提供 APK 的
 //! **识别 → 解析 → 安装管理 → 兼容运行** 链路。
 //!
 //! 本模块为纯逻辑代码，`no_std`（thumbv7a-none-eabi 可编入 .kir），同时
-//! 可在主机 `cargo test` 直接单测，是 Space OS 应用层"自带软件"的完整实现。
+//! 可在主机 `cargo test` 直接单测，是 KiraX OS 应用层"自带软件"的完整实现。
 //!
 //! 真实可运行部分：
 //!   1. ZIP 容器解析：EOCD 定位 → 中心目录 → Local Header → 文件提取
@@ -13,12 +13,12 @@
 //!   3. AndroidManifest.xml **二进制 XML** 解析：提取 package、label 资源引用
 //!   4. resources.arsc 路径映射 + strings.xml 二进制解析：解析出应用显示名
 //!   5. 图标提取：从 res/mipmap-* 目录取出 PNG 原始数据
-//!   6. **DEX 兼容解码**（接入 crates/space-dex 引擎）：类/方法/指令统计、
+//!   6. **DEX 兼容解码**（接入 crates/kirax-dex 引擎）：类/方法/指令统计、
 //!      opcode 覆盖与未支持清单、方法级 .kir 转译骨架（AOT 方向）
 //!   7. 安装/卸载/列表管理：挂载到 FAT32 的 /APKS 目录
 //!
 //! 路线图（后续阶段，见 README.md）：
-//!   - DEX 解释器执行（interp.rs 已在 space-dex 就绪，接入做完整运行）
+//!   - DEX 解释器执行（interp.rs 已在 kirax-dex 就绪，接入做完整运行）
 //!   - Binder 服务抽象（Intent/PackageManager/ActivityManager 微内核）
 //!   - ART-like 对象模型（堆内句柄 + 弱引用 + GC 标清）
 //!
@@ -45,13 +45,13 @@ use alloc::vec::Vec;
 // ----------------------------------------------------------------------------
 /// Deflate (RFC 1951) 解压
 pub mod inflate;
-/// DEX 兼容解码与 .kir 转译骨架（接入 space-dex 引擎）
+/// DEX 兼容解码与 .kir 转译骨架（接入 kirax-dex 引擎）
 pub mod dexcompat;
 
 // ----------------------------------------------------------------------------
 // 独立打包支持（feature = "kir-standalone"）：
 // 在 thumbv7a-none-eabi 上把本库链接成 staticlib 时，需要一个最小
-// GlobalAllocator 与 panic_handler（Space OS 内核内运行时已提供，勿启用本 feature）。
+// GlobalAllocator 与 panic_handler（KiraX OS 内核内运行时已提供，勿启用本 feature）。
 // 堆采用极简 bump 分配（仅支持分配不支持释放，仅用于链接通过）。
 // ----------------------------------------------------------------------------
 #[cfg(feature = "kir-standalone")]
@@ -88,7 +88,7 @@ mod standalone {
     }
 }
 
-/// 错误码（与 Space OS syscall::err 风格一致，负值由调用方转换）
+/// 错误码（与 KiraX OS syscall::err 风格一致，负值由调用方转换）
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ApkError {
     /// 文件过短或魔数不符

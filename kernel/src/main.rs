@@ -1,4 +1,4 @@
-//! # Space OS 内核入口
+//! # KiraX OS 内核入口
 //!
 //! 引导流程（boot/start.S → 本文件）：
 //! 1. `kernel_main`：主核入口（0 号核）
@@ -16,6 +16,7 @@ extern crate alloc;
 #[cfg(not(target_arch = "aarch64"))]
 pub mod uart;
 /// PL011 主串口（统一镜像：Pi3 32 位 / AArch64 均使用，Pi2 运行时切 mini UART）
+pub mod board;
 pub mod pl011;
 /// SoC 运行时识别（统一镜像：一份内核自动适配 Pi2 / Pi3）
 pub mod soc;
@@ -62,8 +63,8 @@ mod start64;
 use core::fmt::Write;
 
 /// 版本与横幅
-pub const OS_NAME: &str = "Space OS";
-pub const OS_VERSION: &str = "0.1.0";
+pub const OS_NAME: &str = "KiraX OS";
+pub const OS_VERSION: &str = "1.0.0";
 #[cfg(not(target_arch = "aarch64"))]
 pub const ARCH: &str = "ARMv7-A (AArch32)";
 #[cfg(target_arch = "aarch64")]
@@ -143,7 +144,7 @@ pub extern "C" fn kernel_main() -> ! {
         if framebuffer::init(framebuffer::DEFAULT_W, framebuffer::DEFAULT_H).is_ok() {
             klog!("[desktop] Glass desktop starting");
             let mut desktop = desktop::Desktop::new();
-            desktop.notify("Space OS", "Glass desktop v0.1.0");
+            desktop.notify("KiraX OS", "Glass desktop v1.0.0");
             desktop.run(); // 主核进入桌面合成循环（不返回）
         } else {
             klog!("[desktop] framebuffer init failed, fallback to headless");
@@ -171,7 +172,7 @@ fn panic(info: &core::panic::PanicInfo) -> ! {
     let mut c = console::CONSOLE.lock();
     let _ = write!(c, "\n[KERNEL PANIC] ");
     let _ = write!(c, "{}", info);
-    let _ = write!(c, "\n[SpaceOS] system halted\n");
+    let _ = write!(c, "\n[KiraXOS] system halted\n");
     loop {
         unsafe { core::arch::asm!("wfi") };
     }

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-apkcompat.kir 打包脚本（Space OS 自带软件 · APK 兼容器）
+apkcompat.kir 打包脚本（KiraX OS 自带软件 · APK 兼容器）
 
-产物结构（SKIR，与 tools/space-cli、tools/kirpm、space-studio kirpack.rs 一致）：
+产物结构（SKIR，与 tools/kirax-cli、tools/kirpm、kirax-studio kirpack.rs 一致）：
   魔数 "SKIR" | 版本 u32 | 头 32B（code/icon/manifest 三段的偏移+大小） | code | icon | manifest
-注意：crates/space-core/src/kir.rs 当前实现的是另一套 KIR1/128B 头格式，尚未对齐本 SKIR 格式。
+注意：crates/kirax-core/src/kir.rs 当前实现的是另一套 KIR1/128B 头格式，尚未对齐本 SKIR 格式。
 
 用法：
   python3 scripts/pack-apkcompat.py [输出路径]

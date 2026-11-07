@@ -16,9 +16,9 @@ use crate::graphics::{draw_planet_icon, draw_rocket_icon, Surface};
 use crate::timer;
 use crate::window::{self, WindowManager};
 use alloc::vec::Vec;
-use space_core::events::{EventKind, InputEvent, RingBuffer};
-use space_core::glass::{self, Color, GlassMode};
-use space_core::roundrect::Rect;
+use kirax_core::events::{EventKind, InputEvent, RingBuffer};
+use kirax_core::glass::{self, Color, GlassMode};
+use kirax_core::roundrect::Rect;
 
 /// 桌面状态
 pub struct Desktop {
@@ -122,7 +122,7 @@ impl Desktop {
         let sigma = g.blur_radius as f32;
         let w = self.wallpaper.w as usize;
         let h = self.wallpaper.h as usize;
-        space_core::blur::precompute_wallpaper_blur(
+        kirax_core::blur::precompute_wallpaper_blur(
             &self.wallpaper.data,
             w,
             h,
@@ -149,7 +149,7 @@ impl Desktop {
         klog!("[desktop] Glass desktop started");
         // 示例窗口（演示合成）
         self.wm.create_window(
-            "About Space OS",
+            "About KiraX OS",
             Rect::new(120, 90, 420, 260),
             true,
         );
@@ -500,6 +500,6 @@ impl<'a> core::fmt::Write for TimeWriter<'a> {
 pub extern "C" fn desktop_task() {
     // 等待 framebuffer 就绪（Phase 3 初始化后由主流程调用 run）
     let mut d = Desktop::new();
-    d.notify("Space OS", "Glass 桌面已启动");
+    d.notify("KiraX OS", "Glass 桌面已启动");
     d.run();
 }

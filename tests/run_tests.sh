@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Space OS 一键测试脚本
+# KiraX OS 一键测试脚本
 # 用法: ./tests/run_tests.sh
 # 1) host 端单元测试 (cargo test)
 # 2) QEMU 端板载自检 (make qemu, 解析串口输出)
@@ -8,11 +8,11 @@ cd "$(dirname "$0")/.."
 
 export PATH="$HOME/.cargo/bin:$PATH:/usr/bin:$PATH"
 PASS=0; FAIL=0
-echo "===== Space OS 测试套件 ====="
+echo "===== KiraX OS 测试套件 ====="
 
 echo
-echo "--- [1/2] Host 单元测试 (space-core) ---"
-if (cd crates/space-core && cargo test 2>&1 | tail -8); then
+echo "--- [1/2] Host 单元测试 (kirax-core) ---"
+if (cd crates/kirax-core && cargo test 2>&1 | tail -8); then
   echo "host 测试完成"
 fi
 

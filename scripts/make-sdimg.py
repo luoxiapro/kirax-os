@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-生成 UTM/QEMU 可直接挂载的 Space OS SD 卡镜像（raw img，纯 Python 手写 FAT16）。
+生成 UTM/QEMU 可直接挂载的 KiraX OS SD 卡镜像（raw img，纯 Python 手写 FAT16）。
 
 结构：
   扇区 0       : MBR（活动分区 0x0E FAT16 LBA，起始 2048）
@@ -27,7 +27,7 @@ ROOT_DIR_SECTORS = (ROOT_ENTRIES * 32 + SECTOR - 1) // SECTOR
 RESERVED = 1
 SPF = 512                  # 每 FAT 扇数（FAT16，65536 簇容量）
 
-def make(kernel_path, out_path, label="SPACEOS", arm64=False, model="pi2", kernel64_path=None):
+def make(kernel_path, out_path, label="KIRAXOS", arm64=False, model="pi2", kernel64_path=None):
     total_sectors = IMG_MB * 1024 * 1024 // SECTOR
     part_size = total_sectors - PART_START
 
@@ -166,7 +166,7 @@ def make(kernel_path, out_path, label="SPACEOS", arm64=False, model="pi2", kerne
     print("[sdimg]   用法（QEMU/UTM）：-M raspi2b/raspi3b -drive file=%s,format=raw" % out_path)
 
 if __name__ == "__main__":
-    ap = argparse.ArgumentParser(description="生成 Space OS SD 卡镜像")
+    ap = argparse.ArgumentParser(description="生成 KiraX OS SD 卡镜像")
     ap.add_argument("kernel", help="32 位内核二进制（统一 kernel7.img）")
     ap.add_argument("out", help="输出镜像路径")
     ap.add_argument("--kernel64", default=None, help="64 位内核二进制（kernel8.img），同时写入并启用 arm_64bit=1")

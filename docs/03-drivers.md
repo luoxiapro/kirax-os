@@ -20,7 +20,7 @@
 
 ## FAT32 文件系统
 
-- `crates/space-core/src/fat32.rs`：只读挂载 + 读文件。
+- `crates/kirax-core/src/fat32.rs`：只读挂载 + 读文件。
 - 挂载校验：引导签名 0x55AA、BPB 解析（每簇扇区数、FAT 大小、根簇）。
 - 根目录 LBA = reserved + num_fats * sectors_per_fat。
 - 文件内容按 FAT 链读簇。

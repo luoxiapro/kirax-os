@@ -3,7 +3,7 @@
 //! 设计：
 //! - [`Surface`] 是统一的 RGBA8888 画布（壁纸、窗口背板、framebuffer 双缓冲都用它）；
 //! - 全部绘制为纯 CPU 整数/定点运算（Cortex-A7 无硬件 2D 加速）；
-//! - 高级效果（高斯模糊/混合/圆角）由 space-core 的纯逻辑模块提供；
+//! - 高级效果（高斯模糊/混合/圆角）由 kirax-core 的纯逻辑模块提供；
 //! - 图标一律为矢量几何（行星/轨道/火箭），禁止 emoji。
 //!
 //! 帧缓冲颜色顺序：内存中为 B,G,R,A（VideoCore 原生 BGRA32）。
@@ -11,8 +11,8 @@
 use crate::font::{self, FONT8X8};
 use alloc::vec;
 use alloc::vec::Vec;
-use space_core::glass::Color;
-use space_core::roundrect::Rect;
+use kirax_core::glass::Color;
+use kirax_core::roundrect::Rect;
 
 /// 画布
 pub struct Surface {
@@ -106,9 +106,9 @@ impl Surface {
         }
     }
 
-    /// 填充圆角矩形（带抗锯齿，走 space-core SDF）
+    /// 填充圆角矩形（带抗锯齿，走 kirax-core SDF）
     pub fn fill_round_rect(&mut self, r: &Rect, radius: f32, c: Color) {
-        space_core::roundrect::fill_round_rect(
+        kirax_core::roundrect::fill_round_rect(
             &mut self.data,
             self.w as usize,
             self.h as usize,
@@ -232,7 +232,7 @@ impl Surface {
         if filled {
             for y in (cy - r)..=(cy + r) {
                 let dy = y - cy;
-                let dx = space_core::fmath::isqrt((r * r - dy * dy) as u32) as i32;
+                let dx = kirax_core::fmath::isqrt((r * r - dy * dy) as u32) as i32;
                 self.fill_rect(&Rect::new(cx - dx, y, 2 * dx + 1, 1), c);
             }
         } else {
@@ -261,7 +261,7 @@ impl Surface {
 
     /// 把另一画布按源覆盖混合到本画布指定位置（带全局透明度）
     pub fn blit(&mut self, src: &Surface, x: i32, y: i32, alpha: u8) {
-        space_core::blend::blend_rect(
+        kirax_core::blend::blend_rect(
             &mut self.data,
             self.w as usize,
             self.h as usize,

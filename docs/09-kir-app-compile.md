@@ -1,8 +1,8 @@
 # .kir 应用编译规范（SKIR 线格式 · KIR2）
 
-> 适用范围：Space OS（树莓派 2/3，ARMv7/AArch64）上 `.kir` 应用的编译与打包。
-> 本文是权威规范，与真实产物一致：`crates/space-core/src/kir.rs`（解析端）、
-> `scripts/pack-apkcompat.py`（打包端）、`space-studio/src-tauri/src/kirpack.rs`（打包器）、
+> 适用范围：KiraX OS（树莓派 2/3，ARMv7/AArch64）上 `.kir` 应用的编译与打包。
+> 本文是权威规范，与真实产物一致：`crates/kirax-core/src/kir.rs`（解析端）、
+> `scripts/pack-apkcompat.py`（打包端）、`kirax-studio/src-tauri/src/kirpack.rs`（打包器）、
 > `kernel/src/kir/mod.rs`（加载器）均按本格式校验。历史 KIR1（魔数 `0x4B495231`、128B 头、
 > key=value manifest）已废弃，不要再用。
 
@@ -49,7 +49,7 @@
 
 - 无 ELF 头、无符号表、无重定位表、无动态链接；
 - 代码、只读数据（`.text` + `.rodata`）直接以机器码形式进入 code 段；
-- 不要向内核加载器传入 ELF 文件本身（`tools/space-cli package` 目前直接打包 ELF，
+- 不要向内核加载器传入 ELF 文件本身（`tools/kirax-cli package` 目前直接打包 ELF，
   属占位实现，**不是合规路径**——加载器按机器码执行会跑飞，正式打包必须先用 objcopy 提取纯二进制）；
 - 加载器预期（Phase 5 完整版）：代码段映射到用户地址空间 `0x2000_0000` 起始、BSS 清零、
   SPSR 置 User 模式后入调度队列，入口为 code 段起始字节。
@@ -150,9 +150,9 @@ cd ../.. && python3 scripts/pack-apkcompat.py    # 生成并自验证 apkcompat.
 
 其它可用打包入口：
 
-- `crates/space-core/src/kir.rs::pack(code, icon, _w, _h, name, author, version, ...)`
+- `crates/kirax-core/src/kir.rs::pack(code, icon, _w, _h, name, author, version, ...)`
   → Rust API 打包（host 可测，单测含真实产物 roundtrip）；
-- `space-studio/src-tauri/src/kirpack.rs::pack(code, icon, manifest)`
+- `kirax-studio/src-tauri/src/kirpack.rs::pack(code, icon, manifest)`
   → 纯 Rust 打包/解包（无系统依赖，跨平台）；
 - `scripts/pack-apkcompat.py` → 完整参考流水线（编译 → 提取 → 图标 → 打包 → 自验证）。
 
@@ -173,5 +173,5 @@ cd ../.. && python3 scripts/pack-apkcompat.py    # 生成并自验证 apkcompat.
 1. `cargo test`（host）全绿；
 2. `cargo build --target thumbv7a-none-eabi --release --features kir-standalone` 0 error 0 warning；
 3. 打包脚本自验证 PASS（魔数 / 段边界 / 图标 PNG / manifest）；
-4. 用 `space-core::kir::KirHeader::parse` 复解析产物通过；
+4. 用 `kirax-core::kir::KirHeader::parse` 复解析产物通过；
 5. 单文件 ≤ 256KB；manifest 含 `name` / `author` / `version`。

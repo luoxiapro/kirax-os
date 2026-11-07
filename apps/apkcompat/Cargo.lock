@@ -4,11 +4,11 @@ version = 4
 
 [[package]]
 name = "apkcompat"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
- "space-dex",
+ "kirax-dex",
 ]
 
 [[package]]
-name = "space-dex"
-version = "0.1.0"
+name = "kirax-dex"
+version = "1.0.0"

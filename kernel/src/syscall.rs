@@ -124,14 +124,14 @@ fn dispatch(nr: u32, a0: u32, a1: u32, a2: u32, _a3: u32) -> u32 {
         nr::SBRK => {
             // sbrk(size)：简化——从内核堆分配（仅调试用，不做进程地址空间）
             let size = a0 as usize;
-            match crate::memory::alloc_pages(space_core::align_up(size, 4096).trailing_zeros() as u32 - 12) {
+            match crate::memory::alloc_pages(kirax_core::align_up(size, 4096).trailing_zeros() as u32 - 12) {
                 Some(addr) => addr as u32,
                 None => err::ENOMEM,
             }
         }
         nr::EVENTS_POLL => {
             // events_poll(buf, max)：从输入环形缓冲读取事件
-            crate::window::poll_events(a0 as *mut space_core::events::InputEvent, a1 as usize) as u32
+            crate::window::poll_events(a0 as *mut kirax_core::events::InputEvent, a1 as usize) as u32
         }
         nr::KIR_LOAD => {
             // kir_load(path)：加载并启动 .kir 应用（Phase 5 实现）

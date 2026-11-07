@@ -27,7 +27,7 @@ KERNEL_IMG   := $(BUILD)/kernel7.img
 # 因此用独立链接脚本以 0x10000 为基址重新链接，保证绝对地址正确。
 QEMU_ELF     := $(BUILD)/qemu-kernel.elf
 START_O      := $(BUILD)/start.o
-RUST_LIB     := $(KERNEL)/target/thumbv7a-none-eabi/release/libspace_kernel.a
+RUST_LIB     := $(KERNEL)/target/thumbv7a-none-eabi/release/libkirax_kernel.a
 
 # ---- 默认串口：mini UART（QEMU 用第二个串口） ----
 QEMU_SERIAL ?= -serial null -serial stdio
@@ -113,9 +113,9 @@ PI3_START_O := $(PI3_BUILD)/start.o
 PI3_ELF     := $(PI3_BUILD)/kernel.elf
 PI3_IMG     := $(PI3_BUILD)/kernel7.img
 # Pi3 使用独立 target 目录（target-pi3），与 Pi2 产物隔离。
-# 否则 --features pi3 会把同路径 libspace_kernel.a 覆盖成 Pi3 版，
+# 否则 --features pi3 会把同路径 libkirax_kernel.a 覆盖成 Pi3 版，
 # 导致后续 make qemu（Pi2）链接到 PL011 驱动、mini UART 串口静默。
-PI3_RUST    := $(KERNEL)/target-pi3/thumbv7a-none-eabi/release/libspace_kernel.a
+PI3_RUST    := $(KERNEL)/target-pi3/thumbv7a-none-eabi/release/libkirax_kernel.a
 
 .PHONY: pi3 pi3-qemu pi3-gdb pi3-install
 
@@ -170,7 +170,7 @@ pi3-install: $(PI3_IMG)
 # ----------------------------------------------------------------------------
 # 与 32 位流程的关键差异（重要，勿照搬 pi3 目标）：
 #   1. 启动代码（EL2→EL1 降级、VMSAv8-64 页表、异常向量表）由
-#      kernel/src/start64.rs 的 core::arch::global_asm! 内嵌进 libspace_kernel.a，
+#      kernel/src/start64.rs 的 core::arch::global_asm! 内嵌进 libkirax_kernel.a，
 #      由 rustc/LLVM 在 cargo build 阶段直接汇编。因此本目标【不需要】外部
 #      start.o——boot/start64.S 是与之等价的独立汇编副本，若再链接它会与库内
 #      global_asm! 产生 _start / mmu_init_64 / _vectors / _page_l1 重复定义。
@@ -185,7 +185,7 @@ pi3-install: $(PI3_IMG)
 PI3A_BUILD := $(BUILD)/pi3-aarch64
 PI3A_ELF   := $(PI3A_BUILD)/kernel8.elf
 PI3A_IMG   := $(PI3A_BUILD)/kernel8.img
-PI3A_RUST  := $(KERNEL)/target/aarch64-unknown-none/release/libspace_kernel.a
+PI3A_RUST  := $(KERNEL)/target/aarch64-unknown-none/release/libkirax_kernel.a
 
 # Rust 自带 LLVM 工具链（降级路径；可被环境变量覆盖）
 RUSTUP_TC  := $(HOME)/.rustup/toolchains/stable-x86_64-unknown-linux-gnu

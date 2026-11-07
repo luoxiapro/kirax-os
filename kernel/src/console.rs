@@ -129,7 +129,7 @@ macro_rules! klog {
     ($($arg:tt)*) => {{
         use core::fmt::Write;
         let mut c = $crate::console::CONSOLE.lock();
-        let _ = write!(c, "[SpaceOS] ");
+        let _ = write!(c, "[KiraXOS] ");
         let _ = write!(c, $($arg)*);
         let _ = c.write_str("\n");
     }};

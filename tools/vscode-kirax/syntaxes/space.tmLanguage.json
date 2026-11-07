@@ -1,0 +1,26 @@
+{
+  "comment": "KiraX OS 语法高亮（极简）",
+  "scopeName": "source.space",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#keywords" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        { "name": "comment.line.double-slash.space", "match": "//.*$" }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        { "name": "string.quoted.double.space", "match": "\"[^\"]*\"" }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        { "name": "keyword.control.space", "match": "\\b(fn|let|mut|match|if|else|for|while|impl|mod|use|crate|pub|struct|enum)\\b" }
+      ]
+    }
+  }
+}

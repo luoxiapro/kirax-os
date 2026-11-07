@@ -1,6 +1,6 @@
 # 阶段四：图形子系统与 Glass 桌面
 
-## 渲染原语（crates/space-core）
+## 渲染原语（crates/kirax-core）
 
 | 模块 | 功能 |
 |---|---|

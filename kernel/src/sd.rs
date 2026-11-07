@@ -3,7 +3,7 @@
 //! 控制器遵循 SDHCI 变体。寄存器与位定义来自《BCM2835 ARM Peripherals》第 8 章
 //! （SD Card）。**注意**：QEMU 的 raspi2b 未模拟 EMMC 控制器，本驱动无法在
 //! QEMU 中验证，属于“真机验证项”（见 docs/05 的 SD 兼容性测试计划）；
-//! FAT32 逻辑层已在 QEMU 中用内存盘验证（space-core::fat32 测试）。
+//! FAT32 逻辑层已在 QEMU 中用内存盘验证（kirax-core::fat32 测试）。
 //!
 //! 初始化序列（SDHC 卡）：
 //! ```text
@@ -397,10 +397,10 @@ pub fn write_block(lba: u64, buf: &[u8]) -> Result<(), &'static str> {
     Ok(())
 }
 
-/// 块设备适配（供 space-core::fat32 使用）
+/// 块设备适配（供 kirax-core::fat32 使用）
 pub struct SdBlockDevice;
 
-impl space_core::fat32::BlockDevice for SdBlockDevice {
+impl kirax_core::fat32::BlockDevice for SdBlockDevice {
     fn read_sectors(&mut self, lba: u64, buf: &mut [u8]) -> Result<(), &'static str> {
         let n = buf.len() / 512;
         for i in 0..n {
@@ -423,7 +423,7 @@ impl space_core::fat32::BlockDevice for SdBlockDevice {
 /// 挂载 FAT32 并标记就绪（供 kir 加载器使用）
 pub fn mount_fat32() -> Result<(), &'static str> {
     let dev = SdBlockDevice;
-    let _fs = space_core::fat32::Fat32Fs::mount(dev)?;
+    let _fs = kirax_core::fat32::Fat32Fs::mount(dev)?;
     crate::kir::set_fs_ready();
     klog!("[sd] FAT32 卷挂载成功");
     Ok(())
@@ -448,7 +448,7 @@ pub extern "C" fn sd_read_file(path: *const u8, out: *mut u8, max: u32) -> i32 {
     }
     let path_str = core::str::from_utf8(&name).unwrap_or("");
     let dev = SdBlockDevice;
-    let mut fs = match space_core::fat32::Fat32Fs::mount(dev) {
+    let mut fs = match kirax_core::fat32::Fat32Fs::mount(dev) {
         Ok(f) => f,
         Err(_) => return -2,
     };

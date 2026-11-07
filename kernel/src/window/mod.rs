@@ -9,9 +9,9 @@
 use crate::graphics::Surface;
 use crate::klog;
 use alloc::vec::Vec;
-use space_core::events::{EventKind, InputEvent, RingBuffer};
-use space_core::glass::GlassMode;
-use space_core::roundrect::Rect;
+use kirax_core::events::{EventKind, InputEvent, RingBuffer};
+use kirax_core::glass::GlassMode;
+use kirax_core::roundrect::Rect;
 
 /// 全局输入事件缓冲（驱动写入 / 应用读取）
 static INPUT_QUEUE: RingBuffer<InputEvent, 512> = RingBuffer::new();

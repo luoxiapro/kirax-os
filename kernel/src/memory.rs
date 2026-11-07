@@ -14,7 +14,7 @@
 
 use crate::sync::SpinLock;
 use core::alloc::{GlobalAlloc, Layout};
-use space_core::buddy::{BuddyAllocator, PAGE_SIZE};
+use kirax_core::buddy::{BuddyAllocator, PAGE_SIZE};
 
 // 内核镜像结束地址（链接脚本符号）
 extern "C" {
@@ -24,7 +24,7 @@ extern "C" {
 /// 堆起始（内核镜像结束，4KB 对齐）
 fn heap_start() -> usize {
     let end = unsafe { &__kernel_end as *const u8 as usize };
-    space_core::align_up(end, PAGE_SIZE)
+    kirax_core::align_up(end, PAGE_SIZE)
 }
 
 /// 堆结束：0x3C00_0000（VideoCore 保留区之下）

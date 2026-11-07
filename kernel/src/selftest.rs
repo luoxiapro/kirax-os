@@ -1,6 +1,6 @@
 //! 板载自检（对应“每个内核模块实现后立即编写单元测试”的裸机侧验证）。
 //!
-//! 主机侧 `cargo test` 覆盖 space-core 全部算法；本模块在**真机/QEMU**上
+//! 主机侧 `cargo test` 覆盖 kirax-core 全部算法；本模块在**真机/QEMU**上
 //! 复跑关键路径（内存分配、模糊、混合、.kir、FAT32），全部通过输出
 //! `SELFTEST PASS`（供 tests/run_tests.sh 抓取判定）。
 
@@ -55,7 +55,7 @@ pub fn run_all() {
 
     // ---- 3. 模糊（三次盒式近似） ----
     {
-        use space_core::blur::{box_width_for_sigma, gaussian_blur_3box};
+        use kirax_core::blur::{box_width_for_sigma, gaussian_blur_3box};
         check!("box 宽度为奇数", box_width_for_sigma(4.0, 3) % 2 == 1);
         // 纯色图模糊后不变
         let w = 32;
@@ -71,7 +71,7 @@ pub fn run_all() {
 
     // ---- 4. Alpha 混合 ----
     {
-        use space_core::blend::blend_pixel;
+        use kirax_core::blend::blend_pixel;
         let mut d = [10u8, 20, 30, 255];
         blend_pixel(&mut d, [200, 100, 50, 255]);
         check!("不透明覆盖", d == [200, 100, 50, 255]);
@@ -82,7 +82,7 @@ pub fn run_all() {
 
     // ---- 5. 圆角 SDF ----
     {
-        use space_core::roundrect::{coverage, Rect};
+        use kirax_core::roundrect::{coverage, Rect};
         let r = Rect::new(10, 10, 100, 60);
         check!("圆角中心覆盖率=1", (coverage(60.0, 40.0, &r, 10.0) - 1.0).abs() < 0.01);
         check!("圆角外部覆盖率=0", coverage(5.0, 5.0, &r, 10.0) == 0.0);
@@ -90,7 +90,7 @@ pub fn run_all() {
 
     // ---- 6. .kir 打包/解析 ----
     {
-        use space_core::kir::{extract_code, pack, KirHeader};
+        use kirax_core::kir::{extract_code, pack, KirHeader};
         let code: Vec<u8> = (0u8..64).collect();
         let icon = vec![0x11u8; 16 * 16 * 4];
         let kir = pack(&code, &icon, 16, 16, "Selftest", "Space", "0.1.0", 4096, 8192, true, false);
@@ -105,7 +105,7 @@ pub fn run_all() {
 
     // ---- 7. FAT32（内存盘） ----
     {
-        use space_core::fat32::{BlockDevice, Fat32Fs};
+        use kirax_core::fat32::{BlockDevice, Fat32Fs};
         struct RamDisk(Vec<u8>);
         impl BlockDevice for RamDisk {
             fn read_sectors(&mut self, lba: u64, buf: &mut [u8]) -> Result<(), &'static str> {
@@ -132,7 +132,7 @@ pub fn run_all() {
         let mut fs = Fat32Fs::mount(RamDisk(img)).unwrap();
         let mut buf = [0u8; 32];
         let n = fs.read_file("/HELLO.TXT", 0, &mut buf).unwrap();
-        check!("FAT32 挂载并读取", n == 16 && buf[..16].starts_with(b"Hello, Space OS"));
+        check!("FAT32 挂载并读取", n == 16 && buf[..16].starts_with(b"Hello, KiraX OS"));
     }
 
     if failed == 0 {
@@ -153,7 +153,7 @@ fn build_fat32_image() -> Vec<u8> {
     img[0] = 0xEB;
     img[1] = 0x3C;
     img[2] = 0x90;
-    img[3..11].copy_from_slice(b"SPACEOS!");
+    img[3..11].copy_from_slice(b"KIRAXOS!");
     img[11] = 0x00;
     img[12] = 0x02; // 512 字节扇区
     img[13] = 0x01; // 1 扇区/簇
@@ -180,7 +180,7 @@ fn build_fat32_image() -> Vec<u8> {
     img.copy_within(1 * 512..5 * 512, 5 * 512);
     // 根目录（簇 2 = LBA 9）
     let root = 9 * 512;
-    let content = b"Hello, Space OS!";
+    let content = b"Hello, KiraX OS!";
     // HELLO.TXT 目录项
     let mut sfn = [b' '; 11];
     sfn[0..5].copy_from_slice(b"HELLO");

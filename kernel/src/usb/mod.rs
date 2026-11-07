@@ -6,14 +6,14 @@
 //! 1. DWC2 寄存器映射（主机模式关键寄存器）；
 //! 2. 初始化与端口复位流程；
 //! 3. 控制/批量传输原语（HPRT / HCDMA / HCTSIZ）；
-//! 4. HID 键盘鼠标报文解析（与 space-core::events 对接）。
+//! 4. HID 键盘鼠标报文解析（与 kirax-core::events 对接）。
 //!
 //! 状态：骨架 + 传输原语可用；设备枚举与类绑定在 Phase 3 真机联调时按
 //! “枚举状态机”补齐（见 docs/03_SD卡与真机.md 的 USB 兼容性测试计划）。
 
 use crate::sync::SpinLock;
 use alloc::vec::Vec;
-use space_core::events::{buttons, mods, EventKind, InputEvent};
+use kirax_core::events::{buttons, mods, EventKind, InputEvent};
 
 /// DWC2 基址（BCM2835/2836）
 pub const DWC2_BASE: usize = 0x3F98_0000;

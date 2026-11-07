@@ -1,11 +1,11 @@
-//! DEX 兼容解码与 .kir 转译骨架 —— apkcompat 接入 space-dex 引擎。
+//! DEX 兼容解码与 .kir 转译骨架 —— apkcompat 接入 kirax-dex 引擎。
 //!
 //! 把 APK 内（deflate 压缩的）`classes.dex` 提取、解压后交给
-//! `space_dex::dex::DexFile` 解析，输出：
+//! `kirax_dex::dex::DexFile` 解析，输出：
 //!   1. `DexInfo`：头表规模 / 方法构成 / 指令总数 / opcode 分布 / 未支持清单
 //!   2. `dex_to_kir`：方法级 .kir 转译骨架（AOT 方向；每行 = 地址 | 助记符 | 原始 code units）
 //!
-//! 指令长度与载荷区间跳过的口径与 `crates/space-dex/examples/scan_dex.rs`
+//! 指令长度与载荷区间跳过的口径与 `crates/kirax-dex/examples/scan_dex.rs`
 //! 完全一致（经 037 真实 DEX 对 baksmali 审计定稿：257909 vs 257910，差 1
 //! 为载荷对齐填充口径）。未支持 = 解释器支持集之外的 opcode（037 样本仅
 //! `0x0d move-exception`，属 try/catch 合理缺口）。
@@ -15,7 +15,7 @@ use alloc::collections::BTreeMap;
 use alloc::format;
 use alloc::string::String;
 use alloc::vec::Vec;
-use space_dex::dex::{code_insns, DexFile};
+use kirax_dex::dex::{code_insns, DexFile};
 
 /// 一条 opcode 的统计
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -138,7 +138,7 @@ pub fn dex_to_kir(dex_bytes: &[u8], kir_name: &str) -> Result<String, ApkError> 
     let dex = DexFile::parse(dex_bytes).map_err(|_| ApkError::BadDex)?;
     let mut out = String::new();
     out.push_str(&format!(
-        "; Space OS .kir —— DEX AOT 转译骨架（{}，dex\\n0{}）\n",
+        "; KiraX OS .kir —— DEX AOT 转译骨架（{}，dex\\n0{}）\n",
         kir_name, dex.version
     ));
     out.push_str(&format!(
@@ -150,7 +150,7 @@ pub fn dex_to_kir(dex_bytes: &[u8], kir_name: &str) -> Result<String, ApkError> 
         dex.class_count
     ));
     // 按类分组输出
-    let mut by_class: BTreeMap<String, Vec<&space_dex::dex::Method>> = BTreeMap::new();
+    let mut by_class: BTreeMap<String, Vec<&kirax_dex::dex::Method>> = BTreeMap::new();
     for m in &dex.methods {
         by_class.entry(m.class.clone()).or_default().push(m);
     }

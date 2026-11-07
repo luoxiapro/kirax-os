@@ -3,12 +3,12 @@
 version = 4
 
 [[package]]
-name = "space-core"
-version = "0.1.0"
+name = "kirax-core"
+version = "1.0.0"
 
 [[package]]
-name = "space-kernel"
-version = "0.1.0"
+name = "kirax-kernel"
+version = "1.0.0"
 dependencies = [
- "space-core",
+ "kirax-core",
 ]

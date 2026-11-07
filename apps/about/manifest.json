@@ -1,9 +1,9 @@
 {
-  "name": "about-space-os",
-  "title": "About Space OS",
-  "version": "0.1.0",
+  "name": "about-kirax-os",
+  "title": "About KiraX OS",
+  "version": "1.0.0",
   "icon": "planet",
   "width": 480,
   "height": 320,
-  "content": "Space OS v0.1.0\nARMv7-A (AArch32) · BCM2709\nGlass Design v1.0\nFrom scratch, no Linux."
+  "content": "KiraX OS v1.0.0\nARMv7-A / AArch64 · 多平台（Pi2/Pi3/QEMU）\nGlass Design v1.0\nFrom scratch, no Linux."
 }

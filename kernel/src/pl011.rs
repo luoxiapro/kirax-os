@@ -24,18 +24,22 @@
 
 use core::fmt::{self, Write};
 
-/// 外设基址（BCM2837 与 BCM2709 相同，AArch32 模式）
+/// 板级地址表（raspi / virt 经 `--features board_virt` 切换，见 crate::board）。
+use crate::board::current as b;
+
+/// 外设基址（BCM2837 与 BCM2709 相同，AArch32 模式；raspi 专属，
+/// virt 平台无此总线，GPIO/CPRMAN 初始化路径在 virt 下为已知待适配项）
 const PERIPHERAL_BASE: usize = 0x3F00_0000;
-/// PL011 (UART0) 基址
-const PL011_BASE: usize = PERIPHERAL_BASE + 0x201_000;
+/// PL011 (UART0) 基址 —— 来自板级地址表
+const PL011_BASE: usize = b::PL011_BASE;
 /// GPIO 基址
 const GPIO_BASE: usize = PERIPHERAL_BASE + 0x200_000;
 /// CPRMAN 时钟管理器基址（配置 UART 时钟，QEMU 默认时钟树未使能）
 const CPRMAN_BASE: usize = PERIPHERAL_BASE + 0x101_000;
 
-/// UART 时钟：本驱动自行配置为 19.2 MHz 晶振源（osc，CM_UARTCTL.SRC=0），
-/// 不依赖固件/模拟器的默认时钟树，QEMU 与真机行为一致。
-const UART_CLOCK_HZ: u32 = 19_200_000;
+/// UART 时钟：来自板级地址表（raspi 由本驱动切到 19.2 MHz 晶振源；
+/// virt 为固定 24 MHz，无需 CPRMAN 开关）。
+const UART_CLOCK_HZ: u32 = b::PL011_CLOCK_HZ;
 /// 目标波特率
 const BAUD: u32 = 115_200;
 
