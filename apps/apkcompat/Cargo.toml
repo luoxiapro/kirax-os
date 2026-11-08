@@ -1,6 +1,6 @@
 [package]
 name = "apkcompat"
-version = "1.0.0"
+version = "2.0.0"
 edition = "2021"
 description = "KiraX OS APK 兼容层（参考鸿蒙卓易通）：APK(ZIP) 解析 + AndroidManifest 二进制 XML 解析"
 

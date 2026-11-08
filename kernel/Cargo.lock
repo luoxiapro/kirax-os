@@ -4,11 +4,11 @@ version = 4
 
 [[package]]
 name = "kirax-core"
-version = "1.0.0"
+version = "2.0.0"
 
 [[package]]
 name = "kirax-kernel"
-version = "1.0.0"
+version = "2.0.0"
 dependencies = [
  "kirax-core",
 ]

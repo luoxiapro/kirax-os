@@ -45,14 +45,22 @@ impl Console {
 
     /// 初始化全部串口驱动，并按 SoC 选定输出端口。
     pub fn init(&mut self) {
-        #[cfg(not(target_arch = "aarch64"))]
+        // virt 平台：无 AUX mini UART，跳过其初始化；强制 PL011@0x09000000。
+        #[cfg(all(not(target_arch = "aarch64"), not(feature = "board_virt")))]
         self.mini.init();
         self.pl011.init();
-        self.kind = if soc::use_pl011() {
-            SerialKind::Pl011
-        } else {
-            SerialKind::Mini
-        };
+        #[cfg(feature = "board_virt")]
+        {
+            self.kind = SerialKind::Pl011;
+        }
+        #[cfg(not(feature = "board_virt"))]
+        {
+            self.kind = if soc::use_pl011() {
+                SerialKind::Pl011
+            } else {
+                SerialKind::Mini
+            };
+        }
     }
 
     #[inline]

@@ -1,6 +1,6 @@
 [package]
 name = "kirax-dex"
-version = "1.0.0"
+version = "2.0.0"
 edition = "2021"
 description = "KiraX OS DEX 解析器与字节码解释器（APK 兼容层核心引擎，no_std + host 可测）"
 

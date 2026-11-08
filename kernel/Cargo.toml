@@ -1,7 +1,7 @@
 # KiraX OS 内核（静态库形式，由 Makefile 与 boot/start.o 最终链接）
 [package]
 name = "kirax-kernel"
-version = "1.0.0"
+version = "2.0.0"
 edition = "2021"
 autobins = false
 

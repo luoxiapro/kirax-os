@@ -261,7 +261,7 @@ mod tests {
             16,
             "About KiraX OS",
             "Space Team",
-            "1.0.0",
+            "2.0.0",
             4096,
             8192,
             true,
@@ -281,7 +281,7 @@ mod tests {
         let man = extract_manifest(&kir).unwrap();
         let m = Manifest::parse(man).unwrap();
         assert_eq!(m.name, "About KiraX OS");
-        assert_eq!(m.version, "1.0.0");
+        assert_eq!(m.version, "2.0.0");
     }
 
     #[test]
@@ -344,7 +344,7 @@ mod tests {
         let man = extract_manifest(&bytes).unwrap();
         let m = Manifest::parse(man).unwrap();
         assert_eq!(m.name, "apkcompat");
-        assert_eq!(m.version, "1.0.0");
+        assert_eq!(m.version, "2.0.0");
     }
 
     #[test]

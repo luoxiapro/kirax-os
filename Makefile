@@ -1,5 +1,5 @@
 # ============================================================================
-# Space OS 顶层构建系统（GNU Make）
+# KiraX OS 顶层构建系统（GNU Make）
 # 目标：
 #   all         构建 kernel7.img
 #   qemu        在 QEMU raspi2b 中运行（串口输出到终端）
@@ -11,7 +11,20 @@
 # ============================================================================
 
 # ---- 工具链 ----
+# 链接器：优先 arm-none-eabi-ld，缺失时自动回落 rustup 自带 rust-lld（无需安装交叉工具链）。
 TOOLCHAIN ?= arm-none-eabi
+ifeq ($(shell command -v $(TOOLCHAIN)-ld 2>/dev/null),)
+  RUST_BIN := $(dir $(shell find $(HOME)/.rustup/toolchains -name rust-lld 2>/dev/null | head -1))
+  LD       := $(RUST_BIN)rust-lld -flavor ld
+  OBJCOPY  := $(RUST_BIN)llvm-objcopy
+  OBJDUMP  := $(RUST_BIN)llvm-objdump
+  SIZE     := $(RUST_BIN)llvm-size
+else
+  LD       := $(TOOLCHAIN)-ld
+  OBJCOPY  := $(TOOLCHAIN)-objcopy
+  OBJDUMP  := $(TOOLCHAIN)-objdump
+  SIZE     := $(TOOLCHAIN)-size
+endif
 CARGO     ?= cargo
 QEMU      ?= qemu-system-arm
 QEMU_A64  ?= qemu-system-aarch64
@@ -52,18 +65,18 @@ $(RUST_LIB): FORCE
 
 # ---- 3. 链接（GNU ld + 链接脚本） ----
 $(KERNEL_ELF): $(START_O) $(RUST_LIB) $(ROOT)/boot/linker.ld
-	$(TOOLCHAIN)-ld -T $(ROOT)/boot/linker.ld -o $@ $(START_O) $(RUST_LIB)
-	$(TOOLCHAIN)-objdump -d $(KERNEL_ELF) > $(BUILD)/kernel.dis
+	$(LD) -T $(ROOT)/boot/linker.ld -o $@ $(START_O) $(RUST_LIB)
+	$(OBJDUMP) -d $(KERNEL_ELF) > $(BUILD)/kernel.dis
 
 # ---- 4. 生成 kernel7.img（原始二进制，真机固件加载到 0x8000） ----
 $(KERNEL_IMG): $(KERNEL_ELF)
-	$(TOOLCHAIN)-objcopy -O binary $(KERNEL_ELF) $@
+	$(OBJCOPY) -O binary $(KERNEL_ELF) $@
 	@echo "==> kernel7.img 生成完毕: $$(stat -c%s $@) bytes"
-	@$(TOOLCHAIN)-size $(KERNEL_ELF)
+	@$(SIZE) $(KERNEL_ELF)
 
 # ---- 4b. QEMU 专用内核（基址 0x10000，模拟固件的加载地址） ----
 $(QEMU_ELF): $(START_O) $(RUST_LIB) $(ROOT)/boot/linker-qemu.ld
-	$(TOOLCHAIN)-ld -T $(ROOT)/boot/linker-qemu.ld -o $@ $(START_O) $(RUST_LIB)
+	$(LD) -T $(ROOT)/boot/linker-qemu.ld -o $@ $(START_O) $(RUST_LIB)
 
 kernel: $(KERNEL_ELF)
 
@@ -130,13 +143,13 @@ $(PI3_RUST): FORCE
 	cd $(KERNEL) && $(CARGO) build --release --features pi3 --target-dir $(KERNEL)/target-pi3
 
 $(PI3_ELF): $(PI3_START_O) $(PI3_RUST) $(ROOT)/boot/linker.ld | $(PI3_BUILD)
-	$(TOOLCHAIN)-ld -T $(ROOT)/boot/linker.ld -o $@ $(PI3_START_O) $(PI3_RUST)
-	$(TOOLCHAIN)-objdump -d $@ > $(PI3_BUILD)/kernel.dis
+	$(LD) -T $(ROOT)/boot/linker.ld -o $@ $(PI3_START_O) $(PI3_RUST)
+	$(OBJDUMP) -d $@ > $(PI3_BUILD)/kernel.dis
 
 $(PI3_IMG): $(PI3_ELF)
-	$(TOOLCHAIN)-objcopy -O binary $(PI3_ELF) $@
+	$(OBJCOPY) -O binary $(PI3_ELF) $@
 	@echo "==> Pi3 kernel7.img 生成完毕: $$(stat -c%s $@) bytes"
-	@$(TOOLCHAIN)-size $(PI3_ELF)
+	@$(SIZE) $(PI3_ELF)
 
 pi3: $(PI3_IMG)
 
@@ -146,7 +159,7 @@ pi3: $(PI3_IMG)
 PI3_QEMU_ELF := $(PI3_BUILD)/qemu-kernel.elf
 
 $(PI3_QEMU_ELF): $(PI3_START_O) $(PI3_RUST) $(ROOT)/boot/linker-qemu.ld | $(PI3_BUILD)
-	$(TOOLCHAIN)-ld -T $(ROOT)/boot/linker-qemu.ld -o $@ $(PI3_START_O) $(PI3_RUST)
+	$(LD) -T $(ROOT)/boot/linker-qemu.ld -o $@ $(PI3_START_O) $(PI3_RUST)
 
 pi3-qemu: $(PI3_QEMU_ELF)
 	$(QEMU) -M raspi2b -kernel $(PI3_QEMU_ELF) -display none -serial stdio -serial null

@@ -64,7 +64,7 @@ use core::fmt::Write;
 
 /// 版本与横幅
 pub const OS_NAME: &str = "KiraX OS";
-pub const OS_VERSION: &str = "1.0.0";
+pub const OS_VERSION: &str = "2.0.0";
 #[cfg(not(target_arch = "aarch64"))]
 pub const ARCH: &str = "ARMv7-A (AArch32)";
 #[cfg(target_arch = "aarch64")]
@@ -122,33 +122,44 @@ pub extern "C" fn kernel_main() -> ! {
     klog!("[boot] MMU enabled by start64 (VMSAv8-64, 1GB block)");
 
     // ---- Phase 2：中断控制器与系统定时器 ----
-    #[cfg(not(target_arch = "aarch64"))]
+    // virt 平台：中断控制器为 GIC（未适配），先以轮询模式运行，跳过 BCM 中断控制器。
+    #[cfg(all(not(target_arch = "aarch64"), not(feature = "board_virt")))]
     irq::init();
-    #[cfg(not(target_arch = "aarch64"))]
+    #[cfg(all(not(target_arch = "aarch64"), not(feature = "board_virt")))]
     timer::init();
-    #[cfg(not(target_arch = "aarch64"))]
+    #[cfg(all(not(target_arch = "aarch64"), not(feature = "board_virt")))]
     klog!("[boot] interrupt controller + system timer ready");
+    #[cfg(feature = "board_virt")]
+    klog!("[boot] GIC interrupt controller pending (polling mode)");
 
     // ---- 板载自检 ----
     selftest::run_all();
 
-    // ---- 从核启动（spin 表） ----
-    #[cfg(not(target_arch = "aarch64"))]
+    // ---- 从核启动（spin 表，raspi 专属；virt GIC/PSCI 适配前跳过） ----
+    #[cfg(all(not(target_arch = "aarch64"), not(feature = "board_virt")))]
     scheduler::smp::wake_secondaries();
-    #[cfg(not(target_arch = "aarch64"))]
+    #[cfg(all(not(target_arch = "aarch64"), not(feature = "board_virt")))]
     klog!("[boot] secondary cores released");
 
     // ---- 图形桌面（Glass）：framebuffer 初始化 + 合成器 + 任务栏 + 通知 ----
-    #[cfg(not(target_arch = "aarch64"))]
+    // virt：framebuffer 走 raspi mailbox，未适配；直接进 headless 空闲循环。
+    #[cfg(all(not(target_arch = "aarch64"), not(feature = "board_virt")))]
     {
         if framebuffer::init(framebuffer::DEFAULT_W, framebuffer::DEFAULT_H).is_ok() {
             klog!("[desktop] Glass desktop starting");
             let mut desktop = desktop::Desktop::new();
-            desktop.notify("KiraX OS", "Glass desktop v1.0.0");
+            desktop.notify("KiraX OS", "Glass desktop v2.0.0");
             desktop.run(); // 主核进入桌面合成循环（不返回）
         } else {
             klog!("[desktop] framebuffer init failed, fallback to headless");
             scheduler::start_scheduler();
+        }
+    }
+    #[cfg(all(not(target_arch = "aarch64"), feature = "board_virt"))]
+    {
+        klog!("[virt] headless idle loop (GIC/virtio/framebuffer pending)");
+        loop {
+            unsafe { core::arch::asm!("wfe") };
         }
     }
     #[cfg(target_arch = "aarch64")]

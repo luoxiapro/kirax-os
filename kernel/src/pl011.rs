@@ -118,11 +118,14 @@ impl Pl011 {
             return;
         }
 
-        // ---- 0. 配置 UART 时钟（cprman，19.2MHz osc） ----
-        enable_uart_clock();
+        // ---- raspi 专属：UART 时钟与 GPIO14/15 复用（virt 上电即 UART，无需） ----
+        #[cfg(not(feature = "board_virt"))]
+        {
+            // ---- 0. 配置 UART 时钟（cprman，19.2MHz osc） ----
+            enable_uart_clock();
 
-        // ---- 1. GPIO14/15 → ALT0（UART0 TXD/RXD） ----
-        // GPFSEL0 bit14-19 清零（ALT0 编码 000）
+            // ---- 1. GPIO14/15 → ALT0（UART0 TXD/RXD） ----
+            // GPFSEL0 bit14-19 清零（ALT0 编码 000）
             let fsel = read32(REG_GPFSEL0);
             write32(REG_GPFSEL0, fsel & !(0b111_111 << 14));
 
@@ -134,6 +137,7 @@ impl Pl011 {
             delay_cycles(150);
             write32(REG_GPPUDCLK0, 0);
             write32(REG_GPPUD, 0);
+        }
 
         // ---- 2. 关串口 + 清中断 ----
         write32(REG_CR, 0);
